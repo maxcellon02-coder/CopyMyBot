@@ -1,0 +1,40 @@
+# Telegram
+pyrogram==2.0.106
+tgcrypto==1.2.5
+
+# AI / Claude
+anthropic==0.102.0
+
+# Voice transcription
+faster-whisper==1.1.1
+
+# Document parsing
+pypdf2==3.0.1
+pdfplumber==0.11.9
+pymupdf==1.27.2.3
+python-docx==1.1.2
+openpyxl==3.1.2
+
+# Google Drive
+google-api-python-client==2.154.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
+
+# RAG — Qdrant vector store + multilingual embeddings
+qdrant-client[async]==1.11.0
+sentence-transformers==3.3.1
+
+# Analytics — PostgreSQL async
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+greenlet==3.1.1
+
+# Data processing
+pandas==2.2.3
+
+# Utilities
+python-dotenv==1.0.1
+aiofiles==24.1.0
+httpx==0.28.1
+loguru==0.7.3

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item *)",
+      "Skill(claude-api)",
+      "PowerShell(docker start qdrant *)",
+      "PowerShell(Start-Process powershell.exe -ArgumentList '-NoExit', '-Command', 'cd \"D:\\\\Claude code\\\\mybot\"; .venv\\\\Scripts\\\\python.exe main.py' -WindowStyle Normal)",
+      "PowerShell(cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONPATH=\"E:\\\\Claude code\\\\mybot\"; .venv\\\\Scripts\\\\python.exe scripts/reindex_now.py 2>&1 | Select-String \"chunks|DONE|Qdrant\")"
+    ]
+  }
+}
