@@ -234,7 +234,14 @@ async def main():
     )
     await tg.start()
 
-    # Разрешаем peer менеджерской группы — необходимо для новой сессии
+    # Загружаем диалоги чтобы закешировать access_hash всех чатов (нужно для send_message)
+    logger.info("[TG] Загружаю диалоги для кеширования peers...")
+    try:
+        async for _ in tg.get_dialogs():
+            pass
+    except Exception as e:
+        logger.warning(f"[TG] Ошибка загрузки диалогов: {e}")
+
     target = settings.manager_group_id or settings.notification_chat_id
     try:
         chat = await tg.get_chat(target)
