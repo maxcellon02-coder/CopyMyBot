@@ -5,23 +5,35 @@ from dotenv import load_dotenv; load_dotenv(Path(__file__).resolve().parent.pare
 import httpx
 
 token = os.getenv("NOTIFICATION_BOT_TOKEN")
-print("Жду сообщения в группе... Напиши что-нибудь в группе менеджеров!")
+print("Пиши в группу 'Сотув ва техник булим' — жду 60 сек...")
+print("-" * 50)
+
 offset = 0
+seen = set()
+
+# Сначала сбросим старые апдейты
+with httpx.Client(timeout=10) as c:
+    r = c.get(f"https://api.telegram.org/bot{token}/getUpdates", params={"offset": -1})
+    updates = r.json().get("result", [])
+    if updates:
+        offset = updates[-1]["update_id"] + 1
+
 for _ in range(30):
     with httpx.Client(timeout=10) as c:
         r = c.get(f"https://api.telegram.org/bot{token}/getUpdates",
-                  params={"offset": offset, "timeout": 5})
+                  params={"offset": offset, "timeout": 3})
     updates = r.json().get("result", [])
     for u in updates:
         offset = u["update_id"] + 1
-        msg = u.get("message") or u.get("channel_post") or u.get("my_chat_member")
+        msg = u.get("message") or u.get("channel_post")
         if msg:
-            chat = msg.get("chat") or msg.get("new_chat_member", {})
-            if chat and "id" in chat:
-                print(f"Chat ID : {chat['id']}")
-                print(f"Title   : {chat.get('title')}")
+            chat = msg["chat"]
+            cid = chat["id"]
+            if cid not in seen:
+                seen.add(cid)
+                print(f"Chat ID : {cid}")
+                print(f"Title   : {chat.get('title', '(личка)')}")
                 print(f"Type    : {chat.get('type')}")
-                sys.exit(0)
-    time.sleep(2)
-
-print("Ничего не получено за 60 сек.")
+                print("-" * 50)
+    if not updates:
+        time.sleep(2)
