@@ -247,10 +247,11 @@ async def generate_reply(
         )
         reply_text = response.content[0].text.strip()
 
-        # [NOTIFY_MANAGER] — убираем тег, шлём сигнал менеджеру
+        # [NOTIFY_MANAGER] — убираем тег, ставим флаг для CRM
+        force_notify = False
         if "[NOTIFY_MANAGER]" in reply_text:
             reply_text = reply_text.replace("[NOTIFY_MANAGER]", "").strip()
-            asyncio.create_task(_notify_manager(tg_client, message, user_name, user_text, conv_id))
+            force_notify = True
 
         # [MEDIA_SEND: model] — убираем тег, пересылаем медиа из канала
         media_match = re.search(r'\[MEDIA_SEND:\s*([^\]]+)\]', reply_text)
