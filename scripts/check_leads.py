@@ -50,10 +50,15 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.readonly",
 ]
 
-# Гибкое определение колонок по заголовку (любой регистр, RU/UZ/EN)
-# Реальные заголовки таблицы:
-#   Вақт / Дата | Исм Фамилия | Телефон | Компания | Техника | Марка |
-#   АКБ тури    | Вольтаж     | Ампер соат | Миқдори | Модель | Изоҳ | Ечим
+# Реальная структура таблицы (A–L данные, M = статус Ечим):
+#  A=time  B=name  C=phone  D=company  E=equipment  F=brand
+#  G=battery  H=voltage  I=ah  J=quantity  K=model  L=notes  M=status(Ечим)
+_FIXED_COL_MAP: dict[str, int] = {
+    "time": 0, "name": 1, "phone": 2, "company": 3,
+    "equipment": 4, "brand": 5, "battery": 6, "voltage": 7,
+    "ah": 8, "quantity": 9, "model": 10, "notes": 11,
+}
+
 _COL_ALIASES = {
     "time":      ["вақт / дата", "вақт", "дата", "время", "vaqt", "time", "sana", "timestamp"],
     "name":      ["исм фамилия", "исм", "имя", "фио", "ф.и.о", "ism familiya", "ism", "name"],
@@ -61,13 +66,12 @@ _COL_ALIASES = {
     "company":   ["компания", "kompaniya", "company", "организация", "firma", "korxona"],
     "equipment": ["техника", "texnika", "equipment", "тип техники", "mashina", "transport"],
     "brand":     ["марка", "marka", "brand", "брэнд"],
-    "battery":   ["акб тури", "акб", "аккумулятор", "akb turi", "akb", "battery", "тип акб", "тип батареи", "batareya"],
+    "battery":   ["акб тури", "акб", "аккумулятор", "akb turi", "akb", "battery", "тип акб", "batareya"],
     "voltage":   ["вольтаж", "kuchlanish", "voltage", "volt", "вольт", "напряжение"],
     "ah":        ["ампер соат", "ампер-час", "ampere soat", "ah", "sig'im", "ёмкость", "амперчас"],
     "quantity":  ["миқдори", "количество", "miqdori", "miqdor", "quantity", "кол-во", "dona"],
     "model":     ["модель", "model"],
     "notes":     ["изоҳ", "примечание", "izoh", "notes", "comment", "комментарий"],
-    "status":    ["ечим", "статус", "status", "holat", "решение"],
 }
 
 
@@ -78,6 +82,12 @@ def _build_col_map(headers: list[str]) -> dict[str, int]:
         for field, aliases in _COL_ALIASES.items():
             if h_low in aliases and field not in col_map:
                 col_map[field] = idx
+
+    # Если заголовки совпали менее чем для половины полей — фолбэк на позиции A–L
+    if len(col_map) < len(_FIXED_COL_MAP) // 2:
+        logger.info("[SHEETS] Заголовки не распознаны — используем фиксированные позиции A–L")
+        return dict(_FIXED_COL_MAP)
+
     return col_map
 
 
