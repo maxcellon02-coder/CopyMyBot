@@ -5,7 +5,26 @@
       "Skill(claude-api)",
       "PowerShell(docker start qdrant *)",
       "PowerShell(Start-Process powershell.exe -ArgumentList '-NoExit', '-Command', 'cd \"D:\\\\Claude code\\\\mybot\"; .venv\\\\Scripts\\\\python.exe main.py' -WindowStyle Normal)",
-      "PowerShell(cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONPATH=\"E:\\\\Claude code\\\\mybot\"; .venv\\\\Scripts\\\\python.exe scripts/reindex_now.py 2>&1 | Select-String \"chunks|DONE|Qdrant\")"
+      "PowerShell(cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONPATH=\"E:\\\\Claude code\\\\mybot\"; .venv\\\\Scripts\\\\python.exe scripts/reindex_now.py 2>&1 | Select-String \"chunks|DONE|Qdrant\")",
+      "Bash(docker run *)",
+      "PowerShell(cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONUTF8=\"1\"; .venv\\\\Scripts\\\\python.exe main.py 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 8; cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONUTF8=\"1\"; .venv\\\\Scripts\\\\python.exe scripts\\\\check_leads.py 2>&1)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | python -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\"); [ -z \"$FILE\" ] && exit 0; git -C \"E:/Claude code/mybot\" add \"$FILE\"; git -C \"E:/Claude code/mybot\" diff --cached --quiet && exit 0; BASENAME=$(basename \"$FILE\"); git -C \"E:/Claude code/mybot\" commit -m \"auto: update $BASENAME\" && git -C \"E:/Claude code/mybot\" push origin master 2>/dev/null || true",
+            "shell": "bash",
+            "timeout": 30,
+            "statusMessage": "Pushing to GitHub..."
+          }
+        ]
+      }
     ]
   }
 }
