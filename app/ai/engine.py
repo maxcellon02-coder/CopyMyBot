@@ -21,7 +21,7 @@ from typing import Optional
 
 import anthropic
 from loguru import logger
-from pyrogram import Client, enums
+from pyrogram import Client
 from pyrogram.types import Message
 
 from app.analytics import tracker
