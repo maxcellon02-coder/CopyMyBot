@@ -51,17 +51,22 @@ SCOPES = [
 ]
 
 # Гибкое определение колонок по заголовку (любой регистр, RU/UZ/EN)
+# Реальные заголовки таблицы:
+#   Вақт / Дата | Исм Фамилия | Телефон | Компания | Техника | Марка |
+#   АКБ тури    | Вольтаж     | Ампер соат | Миқдори | Модель | Изоҳ | Ечим
 _COL_ALIASES = {
-    "name":      ["исм", "имя", "ism", "имя клиента", "ф.и.о", "фио", "name"],
+    "time":      ["вақт / дата", "вақт", "дата", "время", "vaqt", "time", "sana", "timestamp"],
+    "name":      ["исм фамилия", "исм", "имя", "фио", "ф.и.о", "ism familiya", "ism", "name"],
     "phone":     ["телефон", "telefon", "тел", "phone", "номер", "raqam"],
     "company":   ["компания", "kompaniya", "company", "организация", "firma", "korxona"],
     "equipment": ["техника", "texnika", "equipment", "тип техники", "mashina", "transport"],
-    "brand":     ["марка", "marka", "brand", "модель", "model", "брэнд"],
-    "battery":   ["акб", "аккумулятор", "akb", "battery", "тип акб", "тип батареи", "akb turi", "batareya"],
-    "voltage":   ["вольтаж", "kuchlanish", "voltage", "volt", "вольт", "v", "напряжение"],
-    "ah":        ["ампер-час", "ампер соат", "ampere", "ah", "sig'im", "ёмкость", "амперчас", "ампер-соат"],
-    "quantity":  ["количество", "miqdor", "quantity", "кол-во", "dona", "сони"],
-    "time":      ["время", "vaqt", "time", "дата", "sana", "timestamp", "вақт"],
+    "brand":     ["марка", "marka", "brand", "брэнд"],
+    "battery":   ["акб тури", "акб", "аккумулятор", "akb turi", "akb", "battery", "тип акб", "тип батареи", "batareya"],
+    "voltage":   ["вольтаж", "kuchlanish", "voltage", "volt", "вольт", "напряжение"],
+    "ah":        ["ампер соат", "ампер-час", "ampere soat", "ah", "sig'im", "ёмкость", "амперчас"],
+    "quantity":  ["миқдори", "количество", "miqdori", "miqdor", "quantity", "кол-во", "dona"],
+    "model":     ["модель", "model"],
+    "notes":     ["изоҳ", "примечание", "izoh", "notes", "comment", "комментарий"],
     "status":    ["ечим", "статус", "status", "holat", "решение"],
 }
 
