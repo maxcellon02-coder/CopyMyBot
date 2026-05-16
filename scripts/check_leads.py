@@ -40,7 +40,7 @@ from app.core.config import settings
 
 # ── Настройки ──────────────────────────────────────────────────────────────────
 SHEET_NAME      = "Maxcellon Заявки"
-CHECK_INTERVAL  = 5 * 60
+CHECK_INTERVAL  = 2 * 60
 CREDS_FILE      = ROOT / "config" / "service_account.json"
 DONE_MARK       = "✅ Юборилди"
 STATUS_COL      = 13              # колонка M (1-based)
