@@ -283,7 +283,19 @@ async def _handle_name_input(client: Client, message: Message, user) -> None:
     _awaiting_name.discard(user.id)
     logger.info(f"[ONBOARD] Name saved: user={user.id} name={name!r}")
 
-    await start_wizard(client, message, name)
+    # Приветствие — дальше Claude сам ведёт разговор естественно
+    lang = _detect_lang(name)
+    if lang == "ru":
+        greeting = (
+            f"Приятно познакомиться, {name}! 😊\n"
+            f"Расскажите, что вас интересует — помогу подобрать нужную АКБ."
+        )
+    else:
+        greeting = (
+            f"Tanishganimdan xursandman, {name}! 😊\n"
+            f"Nimaga qiziqasiz — kerakli АКБni tanlashda yordam beraman."
+        )
+    await message.reply(greeting)
 
 
 # ── Обработчик новых участников группы ───────────────────────────────────────
