@@ -44,7 +44,7 @@ CHECK_INTERVAL  = 2 * 60
 CREDS_FILE      = ROOT / "config" / "service_account.json"
 DONE_MARK       = "✅ Юборилди"
 STATUS_COL      = 13              # колонка M (1-based)
-SESSION_NAME    = "bot_session"
+SESSION_NAME    = "leads_session"
 SESSIONS_DIR    = ROOT / "data" / "sessions"
 
 SCOPES = [
