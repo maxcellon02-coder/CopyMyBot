@@ -85,6 +85,14 @@ class Lead(Base):
     # Менеджер, взявший лид в работу
     assigned_to: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     assigned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Данные квалификации из wizard
+    battery_voltage: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    battery_ah: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    battery_type_pref: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    size_info: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    equipment_type: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    quantity_needed: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    company_name: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
 
     conversation: Mapped["Conversation"] = relationship("Conversation", back_populates="leads")
 
