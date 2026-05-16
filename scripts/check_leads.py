@@ -141,7 +141,10 @@ def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
 
 
 def _open_worksheet(gc: gspread.Client) -> gspread.Worksheet:
-    sheet_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "").strip()
+    sheet_id = (
+        os.getenv("GOOGLE_SHEETS_ID", "").strip()
+        or os.getenv("GOOGLE_DRIVE_FOLDER_ID", "").strip()
+    )
     if sheet_id:
         try:
             sh = gc.open_by_key(sheet_id)
