@@ -235,9 +235,13 @@ def main():
     if not CREDS_FILE.exists():
         raise SystemExit(f"Файл {CREDS_FILE} не найден. Положите service_account.json в папку config/")
 
-    bot_token = os.getenv("BOT_TOKEN", "").strip()
+    bot_token = os.getenv("NOTIFICATION_BOT_TOKEN", "").strip()
     if not bot_token:
-        raise SystemExit("BOT_TOKEN не задан в .env. Добавьте токен бота Telegram.")
+        raise SystemExit(
+            "NOTIFICATION_BOT_TOKEN не задан в .env.\n"
+            "Создайте бота через @BotFather → /newbot → добавьте в группу менеджеров как admin.\n"
+            "Затем вставьте токен: NOTIFICATION_BOT_TOKEN=123456:AAAA..."
+        )
 
     chat_id = os.getenv("MANAGER_GROUP_ID", "").strip()
     if not chat_id:
