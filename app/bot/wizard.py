@@ -64,7 +64,7 @@ _KB_VOLTAGE = ReplyKeyboardMarkup(
     [
         [KeyboardButton("2V"),  KeyboardButton("6V"),  KeyboardButton("12V")],
         [KeyboardButton("24V"), KeyboardButton("48V"), KeyboardButton("80V")],
-        [KeyboardButton("Bilmayman / Не знаю")],
+        [KeyboardButton("✏️ Boshqa / Другое"), KeyboardButton("Bilmayman / Не знаю")],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,
@@ -76,7 +76,8 @@ _KB_AH = ReplyKeyboardMarkup(
         [KeyboardButton("20–40 Ah"),   KeyboardButton("50–80 Ah")],
         [KeyboardButton("100–150 Ah"), KeyboardButton("160–200 Ah")],
         [KeyboardButton("250–300 Ah"), KeyboardButton("350–400 Ah")],
-        [KeyboardButton("400 Ah+"),    KeyboardButton("Bilmayman / Не знаю")],
+        [KeyboardButton("400 Ah+"),    KeyboardButton("✏️ Boshqa / Другое")],
+        [KeyboardButton("Bilmayman / Не знаю")],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,
