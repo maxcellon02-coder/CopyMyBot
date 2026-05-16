@@ -34,7 +34,7 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 import gspread
-import requests
+import httpx
 from google.oauth2.service_account import Credentials
 from loguru import logger
 
