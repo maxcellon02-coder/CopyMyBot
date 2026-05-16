@@ -1,12 +1,11 @@
 """
-app/crm/extractor.py — AI lead extraction + manager group notification.
+app/crm/extractor.py — AI lead extraction + единственная карточка менеджеру.
 
-After each bot reply:
-  1. Claude Haiku analyses the conversation and extracts lead info + key quotes
-  2. If buying intent detected → saves Lead row in DB
-  3. Sends a formatted lead card to MANAGER_GROUP_ID
-  4. Forwards any photos the client sent during the conversation
-  5. Stores manager_message_id for assignment tracking (see crm/monitor.py)
+После каждого ответа бота:
+  1. Claude Haiku анализирует разговор — извлекает намерение и цитаты
+  2. Если есть намерение купить ИЛИ force_notify=True → сохраняет лид + отправляет карточку
+  3. Пересылает фото клиента (если есть)
+  4. Хранит manager_message_id для отслеживания назначений (см. crm/monitor.py)
 """
 
 import asyncio
@@ -15,6 +14,7 @@ from typing import Optional
 
 import anthropic
 from loguru import logger
+from pyrogram import enums
 
 from app.analytics import tracker
 from app.core.config import settings
@@ -46,7 +46,7 @@ has_intent=true only when user shows real interest in purchasing something."""
 _INTENT_EMOJI = {"browsing": "👀", "interested": "🔥", "ready_to_buy": "💰"}
 _INTENT_LABEL = {"browsing": "Смотрит", "interested": "Интересуется", "ready_to_buy": "Готов купить"}
 
-# In-memory map: manager_group message_id → lead_id (for assignment tracking)
+# manager_group message_id → lead_id (для отслеживания назначений)
 _lead_by_msg_id: dict[int, int] = {}
 
 _client: Optional[anthropic.AsyncAnthropic] = None
@@ -60,8 +60,25 @@ def _get_client() -> anthropic.AsyncAnthropic:
 
 
 def get_lead_id_by_msg(message_id: int) -> Optional[int]:
-    """Called by monitor.py to look up which lead a manager replied to."""
     return _lead_by_msg_id.get(message_id)
+
+
+def _html(text: str) -> str:
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _conv_link(chat_id: Optional[int], message_id: Optional[int], user_id: Optional[int]) -> str:
+    """Ссылка на переписку: для группы — прямая, для лички — на профиль."""
+    if chat_id and message_id and chat_id < 0:
+        # Группа / супергруппа
+        if chat_id < -1_000_000_000_000:
+            peer = abs(chat_id) - 1_000_000_000_000
+        else:
+            peer = abs(chat_id)
+        return f"https://t.me/c/{peer}/{message_id}"
+    if user_id:
+        return f"tg://user?id={user_id}"
+    return ""
 
 
 async def maybe_extract_lead(
@@ -73,12 +90,15 @@ async def maybe_extract_lead(
     phone: Optional[str],
     conversation_text: str,
     tg_client=None,
-    photos: Optional[list] = None,   # list of (source_chat_id, message_id)
+    photos: Optional[list] = None,
+    force_notify: bool = False,
+    chat_id: Optional[int] = None,
+    message_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    user_questions: Optional[list] = None,
+    user_tg: Optional[str] = None,
+    chat_title: Optional[str] = None,
 ) -> None:
-    """
-    Fire-and-forget lead extraction.
-    Call via asyncio.create_task() — does not block the reply flow.
-    """
     if not settings.anthropic_key:
         return
 
@@ -94,9 +114,7 @@ async def maybe_extract_lead(
         )
         raw = response.content[0].text.strip()
         if not raw:
-            logger.warning(f"[CRM] Empty response from model for conv={conv_id}")
             return
-        # strip possible markdown code fences the model may add
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -104,13 +122,14 @@ async def maybe_extract_lead(
             raw = raw.strip()
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        logger.warning(f"[CRM] JSON parse error conv={conv_id}: {e} | raw={raw!r:.100}")
+        logger.warning(f"[CRM] JSON parse error conv={conv_id}: {e}")
         return
     except Exception as e:
         logger.warning(f"[CRM] Extraction failed conv={conv_id}: {e}")
         return
 
-    if not data.get("has_intent"):
+    # Отправляем карточку если есть намерение ИЛИ force_notify (Claude решил уведомить)
+    if not data.get("has_intent") and not force_notify:
         return
 
     level = data.get("intent_level", "browsing")
@@ -138,6 +157,12 @@ async def maybe_extract_lead(
             phone=phone or data.get("phone"),
             data=data,
             photos=photos or [],
+            chat_id=chat_id,
+            message_id=message_id,
+            user_id=user_id,
+            user_questions=user_questions or [],
+            user_tg=user_tg,
+            chat_title=chat_title or "Личка",
         )
 
 
@@ -150,6 +175,12 @@ async def _send_card(
     phone: Optional[str],
     data: dict,
     photos: list,
+    chat_id: Optional[int],
+    message_id: Optional[int],
+    user_id: Optional[int],
+    user_questions: list,
+    user_tg: Optional[str],
+    chat_title: str,
 ) -> None:
     target = settings.manager_group_id or settings.notification_chat_id
     if not target:
@@ -159,28 +190,49 @@ async def _send_card(
     emoji = _INTENT_EMOJI.get(level, "📋")
     label = _INTENT_LABEL.get(level, level)
 
-    # Key quotes block
+    # Ссылка на переписку
+    link = _conv_link(chat_id, message_id, user_id)
+    if link:
+        link_line = f'\n🔗 <a href="{link}">Открыть переписку →</a>'
+    else:
+        link_line = ""
+
+    # Имя и @username
+    name_str = _html(user_name or "—")
+    tg_str = f"  {_html(user_tg)}" if user_tg else ""
+
+    # Вопросы клиента
+    if user_questions:
+        q_lines = "\n".join(f"  • {_html(q[:200])}" for q in user_questions[-5:])
+        questions_block = f"\n\n❓ <b>Вопросы клиента:</b>\n{q_lines}"
+    else:
+        questions_block = ""
+
+    # Ключевые цитаты от AI
     quotes = data.get("key_quotes") or []
-    quotes_block = ""
     if quotes:
-        lines = "\n".join(f"  • «{q}»" for q in quotes[:3])
-        quotes_block = f"\n\n💬 **Из переговоров:**\n{lines}"
+        q_lines = "\n".join(f"  • «{_html(q)}»" for q in quotes[:3])
+        quotes_block = f"\n\n💬 <b>Ключевые фразы:</b>\n{q_lines}"
+    else:
+        quotes_block = ""
 
     card = (
-        f"{emoji} **Лид #{lead_id}** — {label}\n"
-        f"{'─' * 28}\n"
-        f"👤 {user_name or '—'}\n"
-        f"📞 {phone or data.get('phone') or '—'}\n"
-        f"🛍 {data.get('product_interest') or '—'}\n"
-        f"📍 {data.get('location') or '—'}\n"
-        f"📝 {data.get('notes') or '—'}"
+        f"{emoji} <b>Лид #{lead_id}</b> — {label}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 <b>{name_str}</b>{tg_str}\n"
+        f"🆔 <code>{user_id or '—'}</code>  |  💬 {_html(chat_title)}"
+        f"{link_line}\n\n"
+        f"🛍 {_html(data.get('product_interest') or '—')}\n"
+        f"📞 {_html(phone or data.get('phone') or '—')}\n"
+        f"📍 {_html(data.get('location') or '—')}"
+        f"{questions_block}"
         f"{quotes_block}\n\n"
-        f"↩️ Ответьте на это сообщение чтобы взять в работу"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"↩️ Ответьте на это сообщение чтобы взять лид <b>#{lead_id}</b>"
     )
 
     try:
-        sent = await tg_client.send_message(target, card)
-        # Store message_id for assignment tracking
+        sent = await tg_client.send_message(target, card, parse_mode=enums.ParseMode.HTML)
         _lead_by_msg_id[sent.id] = lead_id
         await tracker.mark_lead_sent(lead_id, manager_message_id=sent.id)
         logger.info(f"[CRM] Card sent | lead={lead_id} msg={sent.id} target={target}")
@@ -188,15 +240,14 @@ async def _send_card(
         logger.warning(f"[CRM] Failed to send card: {e}")
         return
 
-    # Forward photos (up to 5)
-    if photos and tg_client:
-        for source_chat_id, msg_id in photos[-5:]:
-            try:
-                await tg_client.copy_message(
-                    chat_id=target,
-                    from_chat_id=source_chat_id,
-                    message_id=msg_id,
-                )
-                await asyncio.sleep(0.3)
-            except Exception as e:
-                logger.debug(f"[CRM] Photo forward failed: {e}")
+    # Пересылаем фото клиента (до 5 штук)
+    for source_chat_id, msg_id in (photos or [])[-5:]:
+        try:
+            await tg_client.copy_message(
+                chat_id=target,
+                from_chat_id=source_chat_id,
+                message_id=msg_id,
+            )
+            await asyncio.sleep(0.3)
+        except Exception as e:
+            logger.debug(f"[CRM] Photo forward failed: {e}")
