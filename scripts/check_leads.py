@@ -139,11 +139,12 @@ def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
 def send_telegram(bot_token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     try:
-        resp = requests.post(url, json={
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML",
-        }, timeout=15)
+        with httpx.Client(timeout=15) as client:
+            resp = client.post(url, json={
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "HTML",
+            })
         data = resp.json()
         if not data.get("ok"):
             logger.error(f"[TG] API error: {data.get('description')}")
