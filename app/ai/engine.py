@@ -304,6 +304,13 @@ async def generate_reply(
         conversation_text=convo_text,
         tg_client=tg_client,
         photos=photos or [],
+        force_notify=force_notify,
+        chat_id=message.chat.id if message else None,
+        message_id=message.id if message else None,
+        user_id=user.id if user else None,
+        user_questions=[t["content"] for t in hist if t["role"] == "user"][-6:],
+        user_tg=f"@{user.username}" if user and user.username else None,
+        chat_title=getattr(message.chat, "title", None) if message else "Личка",
     ))
 
     return reply_text
