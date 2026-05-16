@@ -177,24 +177,18 @@ async def check_and_notify(tg_client: Client, worksheet: gspread.Worksheet) -> i
 
     headers = all_values[0]
     col_map = _build_col_map(headers)
-
-    # Определяем индекс колонки статуса: по заголовку или колонка M (13-я, idx=12)
-    if "status" in col_map:
-        status_idx = col_map["status"]
-    else:
-        status_idx = STATUS_COL - 1   # M = индекс 12
+    status_idx = STATUS_COL - 1   # M = индекс 12 (всегда фиксировано)
 
     sent_count = 0
 
     for row_idx, row in enumerate(all_values[1:], start=2):
-        # Получаем значение статуса (колонка M или найденная по заголовку)
+        # Колонка M пустая → новая заявка
         status_val = row[status_idx].strip() if status_idx < len(row) else ""
         if status_val:
-            continue   # уже обработана (не пустая)
+            continue
 
         # Пропускаем полностью пустые строки
-        data_keys = [k for k in col_map if k != "status"]
-        if all(_get(row, col_map, k, "") == "" for k in data_keys):
+        if all(_get(row, col_map, k, "") == "" for k in _FIXED_COL_MAP):
             continue
 
         card = _format_card(row, col_map, row_idx - 1)
@@ -205,10 +199,9 @@ async def check_and_notify(tg_client: Client, worksheet: gspread.Worksheet) -> i
             logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e}")
             continue
 
-        # Помечаем строку — пишем в колонку M (или найденную колонку статуса)
-        col_letter = _col_letter(status_idx + 1)
+        # Пишем "✅ Юборилди" в колонку M
         try:
-            worksheet.update_acell(f"{col_letter}{row_idx}", DONE_MARK)
+            worksheet.update_acell(f"M{row_idx}", DONE_MARK)
         except Exception as e:
             logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e}")
 
