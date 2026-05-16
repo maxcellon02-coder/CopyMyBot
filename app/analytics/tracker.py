@@ -90,6 +90,13 @@ async def save_lead(
     product_interest: Optional[str] = None,
     location: Optional[str] = None,
     notes: Optional[str] = None,
+    battery_voltage: Optional[str] = None,
+    battery_ah: Optional[str] = None,
+    battery_type_pref: Optional[str] = None,
+    size_info: Optional[str] = None,
+    equipment_type: Optional[str] = None,
+    quantity_needed: Optional[str] = None,
+    company_name: Optional[str] = None,
 ) -> int:
     """Save extracted lead info. Returns lead id."""
     async with get_session() as s:
@@ -103,6 +110,13 @@ async def save_lead(
             product_interest=product_interest,
             location=location,
             notes=notes,
+            battery_voltage=battery_voltage,
+            battery_ah=battery_ah,
+            battery_type_pref=battery_type_pref,
+            size_info=size_info,
+            equipment_type=equipment_type,
+            quantity_needed=quantity_needed,
+            company_name=company_name,
         )
         s.add(lead)
         await s.flush()
