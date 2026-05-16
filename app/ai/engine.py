@@ -36,42 +36,6 @@ MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 1024
 MAX_HISTORY_TURNS = 6        # user+assistant pairs kept per conversation
 SYSTEM_PROMPT_FILE = Path("data/system_prompt.txt")
-_COUNTER_FILE = Path("data/notification_counter.json")
-
-
-def _html_escape(text: str) -> str:
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def _next_ticket_number() -> int:
-    """Возвращает следующий номер заявки и сохраняет на диск."""
-    try:
-        if _COUNTER_FILE.exists():
-            data = json.loads(_COUNTER_FILE.read_text(encoding="utf-8"))
-            n = int(data.get("last", 0)) + 1
-        else:
-            n = 1
-        _COUNTER_FILE.parent.mkdir(parents=True, exist_ok=True)
-        _COUNTER_FILE.write_text(json.dumps({"last": n}), encoding="utf-8")
-        return n
-    except Exception as e:
-        logger.warning(f"[COUNTER] Could not read/write counter: {e}")
-        return 0
-
-
-# conv_id → {"ticket": N, "msg_id": M, "ts": float}
-# Если новый [NOTIFY_MANAGER] от того же conv_id пришёл в течение 30 мин —
-# удаляем старое сообщение и отправляем обновлённое с тем же номером заявки.
-_active_tickets: dict[int, dict] = {}
-_TICKET_REUSE_WINDOW = 30 * 60  # секунд
-
-
-def _tg_link(chat_id: int, message_id: int) -> str:
-    """Прямая ссылка на сообщение в закрытой группе/супергруппе."""
-    if chat_id < -1_000_000_000_000:
-        peer = abs(chat_id) - 1_000_000_000_000
-        return f"https://t.me/c/{peer}/{message_id}"
-    return ""
 
 
 _DEFAULT_SYSTEM_PROMPT = """\
