@@ -233,7 +233,15 @@ async def main():
         workdir=str(SESSIONS_DIR),
     )
     await tg.start()
-    logger.info(f"[TG] Подключено | сессия={SESSION_NAME} | target={settings.manager_group_id}")
+
+    # Разрешаем peer менеджерской группы — необходимо для новой сессии
+    target = settings.manager_group_id or settings.notification_chat_id
+    try:
+        chat = await tg.get_chat(target)
+        logger.info(f"[TG] Группа: «{chat.title}» | id={chat.id} | сессия={SESSION_NAME}")
+    except Exception as e:
+        logger.warning(f"[TG] Не удалось разрешить peer {target}: {e}")
+
     logger.info(f"[LOOP] Проверка каждые {CHECK_INTERVAL // 60} мин. Ctrl+C для остановки.")
 
     try:
