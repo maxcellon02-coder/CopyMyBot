@@ -656,6 +656,28 @@ async def _handle_wizard_complete(
         except asyncio.CancelledError:
             pass
 
+    # Сохраняем лид с данными квалификации
+    if wizard_state and settings.database_url:
+        try:
+            phone = _contacts.get(user.id)
+            await tracker.save_lead(
+                conv_id=conv_id,
+                platform="telegram",
+                external_user_id=str(user.id),
+                user_name=user_name,
+                phone=phone,
+                battery_voltage=wizard_state.get("voltage"),
+                battery_ah=wizard_state.get("ah"),
+                battery_type_pref=wizard_state.get("battery_type"),
+                size_info=wizard_state.get("size"),
+                equipment_type=wizard_state.get("equipment"),
+                quantity_needed=wizard_state.get("quantity"),
+                company_name=wizard_state.get("company"),
+            )
+            logger.info(f"[WIZARD] Lead saved for user={user.id}")
+        except Exception as e:
+            logger.warning(f"[WIZARD] Could not save lead for user={user.id}: {e}")
+
     clear_wizard(user.id)
 
     if settings.dry_run:
