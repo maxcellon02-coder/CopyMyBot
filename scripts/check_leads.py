@@ -188,9 +188,7 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
 
         card = _format_card(row, col_map, row_idx - 1)
         try:
-            # Resolve peer перед каждой отправкой — нужно для copied session
-            peer = await tg.resolve_peer(target)
-            await tg.send_message(peer, card, parse_mode=enums.ParseMode.HTML)
+            await tg.send_message(target, card, parse_mode=enums.ParseMode.HTML)
             logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx}")
         except Exception as e:
             logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e}")
