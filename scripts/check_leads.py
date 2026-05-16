@@ -7,21 +7,23 @@ scripts/check_leads.py — мониторинг Google Таблицы "Maxcellon
 Что делает:
   • Каждые 5 минут читает Google Sheet "Maxcellon Заявки"
   • Находит строки где колонка M (Ечим) пустая
-  • Отправляет карточку заявки в MANAGER_GROUP_ID
+  • Отправляет карточку заявки в MANAGER_GROUP_ID через Telegram Bot API
   • Пишет "✅ Юборилди" в колонку M чтобы не отправлять повторно
 
 Требования:
   • config/service_account.json — сервисный аккаунт Google
-  • .env — MANAGER_GROUP_ID, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE
-  • GOOGLE_DRIVE_FOLDER_ID в .env (ID таблицы) — если пусто, ищет по названию
+  • .env — BOT_TOKEN, MANAGER_GROUP_ID, GOOGLE_SHEETS_ID (или GOOGLE_DRIVE_FOLDER_ID)
   • Таблица расшарена на email сервисного аккаунта (редактор)
 
-Колонка M = "Ечим": пустая → новая заявка, "✅ Юборилди" → уже отправлена.
+Структура таблицы (A–L данные, M = Ечим/статус):
+  A=Вақт  B=Исм Фамилия  C=Телефон  D=Компания  E=Техника  F=Марка
+  G=АКБ тури  H=Вольтаж  I=Ампер соат  J=Миқдори  K=Модель  L=Изоҳ  M=Ечим
 """
 
 import asyncio
 import os
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,27 +34,23 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 import gspread
+import requests
 from google.oauth2.service_account import Credentials
 from loguru import logger
-from pyrogram import Client, enums
-
-from app.core.config import settings
 
 # ── Настройки ──────────────────────────────────────────────────────────────────
 SHEET_NAME      = "Maxcellon Заявки"
-CHECK_INTERVAL  = 5 * 60
+CHECK_INTERVAL  = 5 * 60          # секунд между проверками
 CREDS_FILE      = ROOT / "config" / "service_account.json"
 DONE_MARK       = "✅ Юборилди"
-STATUS_COL      = 13   # колонка M (1-based)
+STATUS_COL      = 13              # колонка M (1-based)
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.readonly",
 ]
 
-# Реальная структура таблицы (A–L данные, M = статус Ечим):
-#  A=time  B=name  C=phone  D=company  E=equipment  F=brand
-#  G=battery  H=voltage  I=ah  J=quantity  K=model  L=notes  M=status(Ечим)
+# Реальная структура таблицы (A–L данные, M = Ечим):
 _FIXED_COL_MAP: dict[str, int] = {
     "time": 0, "name": 1, "phone": 2, "company": 3,
     "equipment": 4, "brand": 5, "battery": 6, "voltage": 7,
@@ -83,7 +81,6 @@ def _build_col_map(headers: list[str]) -> dict[str, int]:
             if h_low in aliases and field not in col_map:
                 col_map[field] = idx
 
-    # Если заголовки совпали менее чем для половины полей — фолбэк на позиции A–L
     if len(col_map) < len(_FIXED_COL_MAP) // 2:
         logger.info("[SHEETS] Заголовки не распознаны — используем фиксированные позиции A–L")
         return dict(_FIXED_COL_MAP)
@@ -117,7 +114,6 @@ def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
     model     = _get(row, col_map, "model")
     notes     = _get(row, col_map, "notes")
 
-    # Изоҳ/примечание — только если есть
     notes_line = f"\n💬 <b>Изоҳ / Примечание:</b> {_e(notes)}" if notes != "—" else ""
 
     return (
@@ -140,6 +136,24 @@ def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
     )
 
 
+def send_telegram(bot_token: str, chat_id: str, text: str) -> bool:
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    try:
+        resp = requests.post(url, json={
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+        }, timeout=15)
+        data = resp.json()
+        if not data.get("ok"):
+            logger.error(f"[TG] API error: {data.get('description')}")
+            return False
+        return True
+    except Exception as e:
+        logger.error(f"[TG] Request failed: {e}")
+        return False
+
+
 def _open_worksheet(gc: gspread.Client) -> gspread.Worksheet:
     sheet_id = (
         os.getenv("GOOGLE_SHEETS_ID", "").strip()
@@ -148,10 +162,10 @@ def _open_worksheet(gc: gspread.Client) -> gspread.Worksheet:
     if sheet_id:
         try:
             sh = gc.open_by_key(sheet_id)
-            logger.info(f"[SHEETS] Открыта по ID: {sheet_id}")
+            logger.info(f"[SHEETS] Открыта по ID: {sheet_id[:20]}...")
             return sh.sheet1
         except Exception as e:
-            logger.warning(f"[SHEETS] Не удалось открыть по ID ({sheet_id}): {e} — пробую по названию")
+            logger.warning(f"[SHEETS] Не удалось открыть по ID: {e} — пробую по названию")
 
     try:
         sh = gc.open(SHEET_NAME)
@@ -161,17 +175,13 @@ def _open_worksheet(gc: gspread.Client) -> gspread.Worksheet:
         raise SystemExit(
             f"Таблица «{SHEET_NAME}» не найдена.\n"
             f"Убедитесь что:\n"
-            f"  1. Таблица существует в Google Drive\n"
-            f"  2. Расшарена на {gc.auth.service_account_email} (редактор)\n"
-            f"  3. Либо задан GOOGLE_DRIVE_FOLDER_ID в .env"
+            f"  1. Таблица существует и расшарена на {gc.auth.service_account_email}\n"
+            f"  2. Либо задан GOOGLE_SHEETS_ID в .env"
         )
 
 
-async def check_and_notify(tg_client: Client, worksheet: gspread.Worksheet) -> int:
-    target = settings.manager_group_id or settings.notification_chat_id
-    if not target:
-        logger.error("MANAGER_GROUP_ID / NOTIFICATION_CHAT_ID не задан в .env")
-        return 0
+def check_and_notify(gc: gspread.Client, bot_token: str, chat_id: str) -> int:
+    worksheet = _open_worksheet(gc)
 
     all_values = worksheet.get_all_values()
     if len(all_values) < 2:
@@ -180,7 +190,7 @@ async def check_and_notify(tg_client: Client, worksheet: gspread.Worksheet) -> i
 
     headers = all_values[0]
     col_map = _build_col_map(headers)
-    status_idx = STATUS_COL - 1   # M = индекс 12 (всегда фиксировано)
+    status_idx = STATUS_COL - 1   # M = индекс 12
 
     sent_count = 0
 
@@ -195,12 +205,12 @@ async def check_and_notify(tg_client: Client, worksheet: gspread.Worksheet) -> i
             continue
 
         card = _format_card(row, col_map, row_idx - 1)
-        try:
-            await tg_client.send_message(target, card, parse_mode=enums.ParseMode.HTML)
-            logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx}")
-        except Exception as e:
-            logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e}")
+        ok = send_telegram(bot_token, chat_id, card)
+        if not ok:
+            logger.error(f"[SHEETS] Не удалось отправить строку {row_idx}")
             continue
+
+        logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx}")
 
         # Пишем "✅ Юборилди" в колонку M
         try:
@@ -209,20 +219,12 @@ async def check_and_notify(tg_client: Client, worksheet: gspread.Worksheet) -> i
             logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e}")
 
         sent_count += 1
-        await asyncio.sleep(0.5)
+        time.sleep(0.5)
 
     return sent_count
 
 
-def _col_letter(n: int) -> str:
-    result = ""
-    while n:
-        n, r = divmod(n - 1, 26)
-        result = chr(65 + r) + result
-    return result
-
-
-async def main():
+def main():
     logger.remove()
     logger.add(
         sys.stderr, level="INFO",
@@ -230,48 +232,36 @@ async def main():
     )
 
     if not CREDS_FILE.exists():
-        raise SystemExit(
-            f"Файл {CREDS_FILE} не найден.\n"
-            f"Положите service_account.json в папку config/"
-        )
+        raise SystemExit(f"Файл {CREDS_FILE} не найден. Положите service_account.json в папку config/")
+
+    bot_token = os.getenv("BOT_TOKEN", "").strip()
+    if not bot_token:
+        raise SystemExit("BOT_TOKEN не задан в .env. Добавьте токен бота Telegram.")
+
+    chat_id = os.getenv("MANAGER_GROUP_ID", "").strip()
+    if not chat_id:
+        raise SystemExit("MANAGER_GROUP_ID не задан в .env")
 
     creds = Credentials.from_service_account_file(str(CREDS_FILE), scopes=SCOPES)
     gc = gspread.authorize(creds)
-    worksheet = _open_worksheet(gc)
-    logger.info(f"[SHEETS] Лист: «{worksheet.title}» | статус в колонке M (Ечим)")
 
-    tg = Client(
-        name="bot_session",
-        api_id=settings.api_id,
-        api_hash=settings.api_hash,
-        phone_number=settings.phone,
-        workdir=str(ROOT / "data" / "sessions"),
-    )
-    await tg.start()
-    logger.info(
-        f"[TG] Подключено | target={settings.manager_group_id or settings.notification_chat_id}"
-    )
+    logger.info(f"[INIT] Целевая группа: {chat_id}")
     logger.info(f"[LOOP] Проверка каждые {CHECK_INTERVAL // 60} мин. Ctrl+C для остановки.")
 
-    try:
-        while True:
-            try:
-                worksheet = _open_worksheet(gc)
-                sent = await check_and_notify(tg, worksheet)
-                if sent:
-                    logger.info(f"[LOOP] Отправлено {sent} новых заявок")
-                else:
-                    logger.info("[LOOP] Новых заявок нет")
-            except gspread.exceptions.APIError as e:
-                logger.warning(f"[SHEETS] API ошибка: {e} — пропускаем итерацию")
-            except Exception as e:
-                logger.error(f"[LOOP] Ошибка: {e}", exc_info=True)
+    while True:
+        try:
+            sent = check_and_notify(gc, bot_token, chat_id)
+            if sent:
+                logger.info(f"[LOOP] Отправлено {sent} новых заявок")
+            else:
+                logger.info("[LOOP] Новых заявок нет")
+        except gspread.exceptions.APIError as e:
+            logger.warning(f"[SHEETS] API ошибка: {e} — пропускаем итерацию")
+        except Exception as e:
+            logger.error(f"[LOOP] Ошибка: {e}", exc_info=True)
 
-            await asyncio.sleep(CHECK_INTERVAL)
-    finally:
-        await tg.stop()
-        logger.info("[TG] Отключено")
+        time.sleep(CHECK_INTERVAL)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
