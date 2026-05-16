@@ -76,12 +76,7 @@ _COL_ALIASES = {
 
 
 def _ensure_session():
-    """Копирует bot_session → leads_session если leads_session ещё не существует."""
-    leads = SESSIONS_DIR / f"{SESSION_NAME}.session"
-    bot   = SESSIONS_DIR / "bot_session.session"
-    if not leads.exists() and bot.exists():
-        shutil.copy2(bot, leads)
-        logger.info(f"[SESSION] Скопирован bot_session → leads_session")
+    pass  # bot_session используется напрямую
 
 
 def _build_col_map(headers: list[str]) -> dict[str, int]:
