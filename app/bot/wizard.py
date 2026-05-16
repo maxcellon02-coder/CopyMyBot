@@ -2,12 +2,12 @@
 app/bot/wizard.py — пошаговый подбор АКБ через кнопки клавиатуры.
 
 Шаги (7):
-  1. Вольтаж       → ReplyKeyboard
-  2. Ампер-час     → ReplyKeyboard
-  3. Тип батареи   → ReplyKeyboard (LiFePO4 / PzS / PzB)
-  4. Размер/габарит → ReplyKeyboard
-  5. Тип техники   → ReplyKeyboard (погрузчик, штабелёр …)
-  6. Количество    → ReplyKeyboard
+  1. Вольтаж       → кнопки (2V…80V) + «Другое» → свободный ввод
+  2. Ёмкость Ah    → свободный ввод (точное значение)
+  3. Тип батареи   → кнопки (LiFePO4 / PzS / PzB)
+  4. Размер/габарит → кнопки
+  5. Тип техники   → кнопки (погрузчик, штабелёр …)
+  6. Количество    → кнопки
   7. Компания      → свободный ввод текста
   → Запрос в RAG + рекомендация от Claude
 """
@@ -28,9 +28,7 @@ from pyrogram.types import (
 # ── Персистентность состояния wizard ──────────────────────────────────────────
 
 _WIZARD_FILE = Path("data/wizard_state.json")
-
 _wizard_state: dict[int, dict] = {}
-
 TOTAL_STEPS = 7
 
 
@@ -71,18 +69,7 @@ _KB_VOLTAGE = ReplyKeyboardMarkup(
     selective=True,
 )
 
-_KB_AH = ReplyKeyboardMarkup(
-    [
-        [KeyboardButton("20–40 Ah"),   KeyboardButton("50–80 Ah")],
-        [KeyboardButton("100–150 Ah"), KeyboardButton("160–200 Ah")],
-        [KeyboardButton("250–300 Ah"), KeyboardButton("350–400 Ah")],
-        [KeyboardButton("400 Ah+"),    KeyboardButton("✏️ Boshqa / Другое")],
-        [KeyboardButton("Bilmayman / Не знаю")],
-    ],
-    resize_keyboard=True,
-    one_time_keyboard=True,
-    selective=True,
-)
+# Ёмкость — без кнопок, клиент пишет точное значение сам (см. шаг "ah")
 
 _KB_BATTERY_TYPE = ReplyKeyboardMarkup(
     [
@@ -120,7 +107,7 @@ _KB_EQUIPMENT = ReplyKeyboardMarkup(
 
 _KB_QUANTITY = ReplyKeyboardMarkup(
     [
-        [KeyboardButton("1 dona / 1 шт"),  KeyboardButton("2–5 dona / 2–5 шт")],
+        [KeyboardButton("1 dona / 1 шт"),       KeyboardButton("2–5 dona / 2–5 шт")],
         [KeyboardButton("6–10 dona / 6–10 шт"), KeyboardButton("10+ dona / 10+ шт")],
         [KeyboardButton("Bilmayman / Не знаю")],
     ],
@@ -185,25 +172,34 @@ async def handle_wizard_step(
     lang = _detect_lang(text)
     step = state["step"]
 
-    # ── Шаг 1: Вольтаж ────────────────────────────────────────────────────────
+    # ── Шаг 1: Вольтаж (кнопки) ───────────────────────────────────────────────
     if step == "voltage":
+        if "boshqa" in text.lower() or "другое" in text.lower():
+            # Клиент хочет ввести нестандартный вольтаж
+            state["step"] = "voltage_custom"
+            _save_wizard_state()
+            prompt = (
+                "✏️ Напишите напряжение (например: 36V, 72V, 96V):"
+                if lang == "ru" else
+                "✏️ Kuchlanishni yozing (masalan: 36V, 72V, 96V):"
+            )
+            await message.reply(prompt, reply_markup=ReplyKeyboardRemove(selective=True))
+            return None
         state["voltage"] = text
         state["step"] = "ah"
         _save_wizard_state()
-        if lang == "ru":
-            reply = (
-                f"✅ Напряжение: {text}\n\n"
-                f"Шаг 2 из {TOTAL_STEPS} — Какая ёмкость нужна (Ампер-час)?"
-            )
-        else:
-            reply = (
-                f"✅ Kuchlanish: {text}\n\n"
-                f"2-qadam ({TOTAL_STEPS} dan) — Qancha sig'im kerak (Amper-soat)?"
-            )
-        await message.reply(reply, reply_markup=_KB_AH)
+        await message.reply(_ask_ah(lang, text), reply_markup=ReplyKeyboardRemove(selective=True))
         return None
 
-    # ── Шаг 2: Ампер-час ──────────────────────────────────────────────────────
+    # ── Шаг 1б: Вольтаж — свободный ввод ─────────────────────────────────────
+    if step == "voltage_custom":
+        state["voltage"] = text
+        state["step"] = "ah"
+        _save_wizard_state()
+        await message.reply(_ask_ah(lang, text), reply_markup=ReplyKeyboardRemove(selective=True))
+        return None
+
+    # ── Шаг 2: Ёмкость Ah — свободный ввод клиентом ──────────────────────────
     if step == "ah":
         state["ah"] = text
         state["step"] = "battery_type"
@@ -286,7 +282,7 @@ async def handle_wizard_step(
             reply = (
                 f"✅ Количество: {text}\n\n"
                 f"Шаг 7 из {TOTAL_STEPS} — Напишите название вашей компании\n"
-                f"(или напишите «частное лицо» если не от компании)"
+                f"(или «частное лицо» если не от компании)"
             )
         else:
             reply = (
@@ -327,10 +323,12 @@ def build_wizard_context(state: dict) -> str:
     quantity     = state.get("quantity",     "—")
     company      = state.get("company",      "—")
 
-    size_note = ""
     no_limit_kw = ("cheklov yo'q", "без ограничений")
-    if size and not any(kw in size.lower() for kw in no_limit_kw):
-        size_note = f" (отсек под АКБ: максимум {size})"
+    size_note = (
+        f" (отсек под АКБ: максимум {size})"
+        if size and not any(kw in size.lower() for kw in no_limit_kw)
+        else ""
+    )
 
     return (
         f"[Mijoz tanlovi / Выбор клиента]\n"
@@ -349,6 +347,20 @@ def build_wizard_context(state: dict) -> str:
 
 
 # ── Внутренние хелперы ─────────────────────────────────────────────────────────
+
+def _ask_ah(lang: str, voltage: str) -> str:
+    if lang == "ru":
+        return (
+            f"✅ Напряжение: {voltage}\n\n"
+            f"Шаг 2 из {TOTAL_STEPS} — Напишите нужную ёмкость в Ah\n"
+            f"(например: 200 Ah, 400 Ah, 750 Ah — или «не знаю»)"
+        )
+    return (
+        f"✅ Kuchlanish: {voltage}\n\n"
+        f"2-qadam ({TOTAL_STEPS} dan) — Kerakli sig'imni Ah da yozing\n"
+        f"(masalan: 200 Ah, 400 Ah, 750 Ah — yoki «bilmayman»)"
+    )
+
 
 def _detect_lang(text: str) -> str:
     if not text:
@@ -370,7 +382,6 @@ def _build_rag_query(state: dict) -> str:
 
     bt = state.get("battery_type", "")
     if bt and "знаю" not in bt and "mayman" not in bt.lower():
-        # Извлекаем краткое обозначение (LiFePO4 / PzS / PzB)
         for kw in ("LiFePO4", "PzS", "PzB"):
             if kw.lower() in bt.lower():
                 parts.append(kw)
