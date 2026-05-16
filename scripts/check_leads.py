@@ -94,6 +94,7 @@ def _e(text: str) -> str:
 
 
 def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
+    time_str  = _get(row, col_map, "time")
     name      = _get(row, col_map, "name")
     phone     = _get(row, col_map, "phone")
     company   = _get(row, col_map, "company")
@@ -103,21 +104,27 @@ def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
     voltage   = _get(row, col_map, "voltage")
     ah        = _get(row, col_map, "ah")
     quantity  = _get(row, col_map, "quantity")
-    time_str  = _get(row, col_map, "time")
+    model     = _get(row, col_map, "model")
+    notes     = _get(row, col_map, "notes")
+
+    # Изоҳ/примечание — только если есть
+    notes_line = f"\n💬 <b>Изоҳ / Примечание:</b> {_e(notes)}" if notes != "—" else ""
 
     return (
         f"🔔 <b>Янги ариза! / Новая заявка!</b>  <code>#{row_num}</code>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"👤 <b>Исм / Имя:</b> {_e(name)}\n"
+        f"🕐 <b>Вақт / Дата:</b> {_e(time_str)}\n"
+        f"👤 <b>Исм Фамилия:</b> {_e(name)}\n"
         f"📞 <b>Телефон:</b> {_e(phone)}\n"
         f"🏢 <b>Компания:</b> {_e(company)}\n"
         f"🚜 <b>Техника:</b> {_e(equipment)}\n"
         f"🏷 <b>Марка:</b> {_e(brand)}\n"
-        f"🔋 <b>АКБ:</b> {_e(battery)}\n"
+        f"🔋 <b>АКБ тури:</b> {_e(battery)}\n"
         f"⚡ <b>Вольтаж:</b> {_e(voltage)}\n"
-        f"📊 <b>Ампер-соат:</b> {_e(ah)}\n"
+        f"📊 <b>Ампер соат:</b> {_e(ah)}\n"
         f"📦 <b>Миқдори / Количество:</b> {_e(quantity)}\n"
-        f"🕐 <b>Вақт / Время:</b> {_e(time_str)}\n\n"
+        f"🔩 <b>Модель:</b> {_e(model)}"
+        f"{notes_line}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"↩️ Ответьте на это сообщение чтобы взять заявку"
     )
