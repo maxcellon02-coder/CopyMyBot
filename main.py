@@ -93,6 +93,10 @@ async def main():
     scheduler_task = asyncio.create_task(run_scheduler())
     logger.info("RAG-планировщик запущен (обновление каждый час)")
 
+    # Запускаем мониторинг заявок из Google Таблицы
+    leads_task = asyncio.create_task(run_leads_checker())
+    logger.info("Мониторинг заявок запущен (каждые 2 мин.)")
+
     # Ждём — бот работает пока не нажать Ctrl+C
     logger.info("Бот запущен и слушает сообщения. Ctrl+C для остановки.")
     await idle()
@@ -100,6 +104,7 @@ async def main():
     # Остановка
     logger.info("Получен сигнал остановки...")
     scheduler_task.cancel()
+    leads_task.cancel()
     await client.stop()
     logger.info("Бот остановлен.")
 
