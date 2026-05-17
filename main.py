@@ -25,6 +25,7 @@ from app.analytics.db import init_db
 from app.bot.client import create_client
 from app.core.config import settings
 from app.rag.scheduler import run_scheduler, set_client
+from scripts.check_leads import run_leads_checker
 
 
 def _configure_logging():
