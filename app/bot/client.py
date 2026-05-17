@@ -316,9 +316,8 @@ async def on_new_member(client: Client, message: Message) -> None:
         try:
             await message.reply(
                 f"Assalomu alaykum, {first_name}! 👋\n"
-                f"Maxcellon jamoasining guruhiga xush kelibsiz!\n\n"
-                f"Men sizga mahsulotlarimiz va xizmatlarimiz haqida ma'lumot bera olaman.\n"
-                f"Shaxsiy xabarga o'ting — u yerda ismingizni so'rayman 😊"
+                f"Maxcellon guruhiga xush kelibsiz!\n\n"
+                f"Sizga qanday yordam bera olaman? 🙂"
             )
             logger.info(f"[ONBOARD] Group welcome sent for user={user.id}")
         except Exception as e:
