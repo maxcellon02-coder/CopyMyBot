@@ -249,5 +249,43 @@ async def main():
         logger.info("[TG] Отключено")
 
 
+async def run_leads_checker():
+    """Фоновая задача для запуска из main.py: мониторинг Google Таблицы."""
+    if not CREDS_FILE.exists():
+        logger.error(f"[LEADS] {CREDS_FILE} не найден — мониторинг заявок отключён")
+        return
+
+    creds = Credentials.from_service_account_file(str(CREDS_FILE), scopes=SCOPES)
+    gc = gspread.authorize(creds)
+
+    tg = Client(
+        name=SESSION_NAME,
+        api_id=settings.api_id,
+        api_hash=settings.api_hash,
+        phone_number=settings.phone,
+        workdir=str(SESSIONS_DIR),
+    )
+    await tg.start()
+    logger.info(f"[LEADS] Подключено | сессия={SESSION_NAME}")
+    logger.info(f"[LEADS] Проверка каждые {CHECK_INTERVAL // 60} мин.")
+
+    try:
+        while True:
+            try:
+                sent = await check_and_notify(tg, gc)
+                if sent:
+                    logger.info(f"[LEADS] Отправлено {sent} новых заявок")
+                else:
+                    logger.info("[LEADS] Новых заявок нет")
+            except gspread.exceptions.APIError as e:
+                logger.warning(f"[LEADS] API ошибка: {e} — пропускаем итерацию")
+            except Exception as e:
+                logger.error(f"[LEADS] Ошибка: {e}", exc_info=True)
+            await asyncio.sleep(CHECK_INTERVAL)
+    finally:
+        await tg.stop()
+        logger.info("[LEADS] Отключено")
+
+
 if __name__ == "__main__":
     asyncio.run(main())
