@@ -186,18 +186,24 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         if all(_get(row, col_map, k, "") == "" for k in _FIXED_COL_MAP):
             continue
 
+        # Помечаем ДО отправки — защита от дублей при параллельных запусках
+        try:
+            worksheet.update_acell(f"M{row_idx}", DONE_MARK)
+        except Exception as e:
+            logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e} — пропускаем")
+            continue
+
         card = _format_card(row, col_map, row_idx - 1)
         try:
             await tg.send_message(target, card, parse_mode=enums.ParseMode.HTML)
             logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx}")
         except Exception as e:
-            logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e}")
+            logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e} — откатываем метку")
+            try:
+                worksheet.update_acell(f"M{row_idx}", "")
+            except Exception:
+                pass
             continue
-
-        try:
-            worksheet.update_acell(f"M{row_idx}", DONE_MARK)
-        except Exception as e:
-            logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e}")
 
         sent_count += 1
         await asyncio.sleep(0.5)
