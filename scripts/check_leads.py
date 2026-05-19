@@ -102,6 +102,50 @@ def _load_managers_map() -> dict[str, str]:
     return result
 
 
+def _find_service_cols(
+    worksheet: "gspread.Worksheet", headers: list[str]
+) -> tuple[int, int]:
+    """Возвращает (status_col_1based, manager_col_1based).
+
+    Ищет по заголовкам. Если нет — создаёт новые колонки в конце листа.
+    """
+    h_low = [h.strip().lower() for h in headers]
+    total = len(headers)
+
+    # Ищем колонку менеджера
+    mgr_idx = next(
+        (i for i, h in enumerate(h_low) if h in ("менежер", "менеджер", "manager")),
+        None,
+    )
+    if mgr_idx is None:
+        mgr_idx = total
+        try:
+            worksheet.update_cell(1, mgr_idx + 1, _MANAGER_HEADER)
+        except Exception:
+            pass
+        logger.info(f"[SHEETS] Создана колонка «{_MANAGER_HEADER}» → {mgr_idx + 1}")
+    else:
+        logger.info(f"[SHEETS] Найдена колонка «{_MANAGER_HEADER}» → {mgr_idx + 1}")
+
+    # Ищем колонку статуса (Ечим / Статус)
+    status_idx = next(
+        (i for i, h in enumerate(h_low)
+         if h in ("ечим", "статус", "status", "holat", "sent", "отправлено")),
+        None,
+    )
+    if status_idx is None:
+        status_idx = max(total, mgr_idx + 1)
+        try:
+            worksheet.update_cell(1, status_idx + 1, _STATUS_HEADER)
+        except Exception:
+            pass
+        logger.info(f"[SHEETS] Создана колонка «{_STATUS_HEADER}» → {status_idx + 1}")
+    else:
+        logger.info(f"[SHEETS] Найдена колонка «{_STATUS_HEADER}» → {status_idx + 1}")
+
+    return status_idx + 1, mgr_idx + 1  # возвращаем 1-based
+
+
 def _detect_manager(referral_val: str, managers_map: dict[str, str]) -> str:
     """Возвращает имя менеджера по значению реферального поля.
 
