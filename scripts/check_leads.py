@@ -45,7 +45,9 @@ SHEET_NAME      = "Maxcellon Заявки"
 CHECK_INTERVAL  = 2 * 60
 CREDS_FILE      = ROOT / "config" / "service_account.json"
 DONE_MARK       = "✅ Юборилди"
-STATUS_COL      = 13              # колонка M (1-based)
+STATUS_COL      = 13              # колонка M (1-based) — статус отправки
+MANAGER_COL     = 14              # колонка N (1-based) — МЕНЕЖЕР
+DEFAULT_MANAGER = "БОШКА"        # если реферальная ссылка пустая
 SESSION_NAME    = "leads_session"
 SESSIONS_DIR    = ROOT / "data" / "sessions"
 
@@ -54,7 +56,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.readonly",
 ]
 
-# Реальная структура таблицы (A–L данные, M = Ечим):
+# Реальная структура таблицы (A–L данные, M = Ечим, N = МЕНЕЖЕР):
 _FIXED_COL_MAP: dict[str, int] = {
     "time": 0, "name": 1, "phone": 2, "company": 3,
     "equipment": 4, "brand": 5, "battery": 6, "voltage": 7,
@@ -74,7 +76,42 @@ _COL_ALIASES = {
     "quantity":  ["миқдори", "количество", "miqdori", "miqdor", "quantity", "кол-во", "dona"],
     "model":     ["модель", "model"],
     "notes":     ["изоҳ", "примечание", "izoh", "notes", "comment", "комментарий"],
+    "referral":  ["источник", "манба", "реферал", "ref", "referral", "source", "utm_source",
+                  "ким юборди", "кто привел", "откуда", "canal", "канал"],
 }
+
+
+def _load_managers_map() -> dict[str, str]:
+    """Загружает маппинг реферальный_код → имя_менеджера из MANAGERS_MAP в .env.
+
+    Формат в .env:
+        MANAGERS_MAP=акром:Акром,бекзод:Бекзод,sardor:Сардор
+    """
+    raw = os.getenv("MANAGERS_MAP", "").strip()
+    result: dict[str, str] = {}
+    if not raw:
+        return result
+    for pair in raw.split(","):
+        pair = pair.strip()
+        if ":" in pair:
+            key, _, name = pair.partition(":")
+            result[key.strip().lower()] = name.strip()
+    return result
+
+
+def _detect_manager(referral_val: str, managers_map: dict[str, str]) -> str:
+    """Возвращает имя менеджера по значению реферального поля.
+
+    Логика:
+      - пусто → DEFAULT_MANAGER ("БОШКА")
+      - есть в маппинге → берём имя из маппинга
+      - нет в маппинге, но значение не пустое → используем значение как есть
+    """
+    val = referral_val.strip()
+    if not val:
+        return DEFAULT_MANAGER
+    mapped = managers_map.get(val.lower())
+    return mapped if mapped else val
 
 
 def _ensure_session():
