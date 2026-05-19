@@ -940,6 +940,41 @@ async def _debug_incoming(client: Client, message: Message) -> None:
 # БЛОК 8: ФАБРИКА КЛИЕНТА — создание и настройка Pyrogram
 # ═══════════════════════════════════════════════════════════════════════════════
 
+async def on_lead_bot_message(client: Client, message: Message) -> None:
+    """Перехватывает сообщения от lead-ботов (Flagma, Gltr и др.) и немедленно
+    пересылает в группу менеджеров с назначением по round-robin."""
+    if not message.from_user:
+        return
+    username = (message.from_user.username or "").lower().lstrip("@")
+    if username not in get_lead_bot_usernames():
+        return
+
+    target = settings.manager_group_id or settings.notification_chat_id
+    if not target:
+        return
+
+    mgr = get_next_manager()
+    mention = mgr["username"] if mgr else ""
+    mgr_name = mgr["name"] if mgr else "—"
+
+    bot_title = message.from_user.first_name or f"@{message.from_user.username}"
+    try:
+        await client.forward_messages(target, message.chat.id, message.id)
+        note = (
+            f"📨 <b>{_e(bot_title)}</b> орқали янги мижоз!\n"
+            f"👨‍💼 Менежер: {_e(mgr_name)}"
+            + (f"\n\n{mention} — сизнинг клиент! 👆" if mention else "")
+        )
+        await client.send_message(target, note, parse_mode="html")
+        logger.info(f"[LEADBOT] @{username} → пересланo в {target} | менежер={mgr_name}")
+    except Exception as e:
+        logger.error(f"[LEADBOT] Ошибка пересылки от @{username}: {e}")
+
+
+def _e(text: str) -> str:  # локальный хелпер для HTML-escape в уведомлениях
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def create_client() -> Client:
     """
     Создаёт Pyrogram Client (userbot) и регистрирует обработчики.
