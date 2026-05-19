@@ -253,13 +253,28 @@ async def _notify_handoff(client: Client, chat_id: int, user, mgr_name: str,
     if not target:
         return
     try:
-        client_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or str(user.id)
+        # Имя клиента
+        first = (user.first_name or "").strip()
+        last  = (user.last_name  or "").strip()
+        full_name = f"{first} {last}".strip() or "—"
+        username_part = f"@{user.username}" if user.username else "—"
+
+        # Название группы где шли переговоры
+        try:
+            chat = await client.get_chat(chat_id)
+            chat_title = chat.title or str(chat_id)
+        except Exception:
+            chat_title = str(chat_id)
+
         summary = _build_conv_summary(conv_id)
         summary_block = f"\n\n📋 <b>Суть разговора:</b>\n{summary}" if summary else ""
+
         text = (
-            f"🤝 <b>Менеджер {mgr_name} продолжает переговоры</b>\n"
-            f"👤 Клиент: {client_name} (<code>{user.id}</code>)\n"
-            f"💬 Чат: <code>{chat_id}</code>"
+            f"🤝 <b>Менеджер {mgr_name} продолжает переговоры</b>\n\n"
+            f"👤 <b>Клиент:</b> {full_name}\n"
+            f"🔗 <b>Username:</b> {username_part}\n"
+            f"🆔 <b>ID:</b> <code>{user.id}</code>\n\n"
+            f"💬 <b>Группа:</b> {chat_title}"
             f"{summary_block}"
         )
         await client.send_message(target, text, parse_mode="html")
