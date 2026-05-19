@@ -238,6 +238,12 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
     col_map    = _build_col_map(all_values[0])
     status_idx = STATUS_COL - 1   # M = индекс 12
 
+    logger.info(f"[SHEETS] Заголовки: {all_values[0]}")
+    logger.info(f"[SHEETS] Всего строк данных: {len(all_values) - 1}")
+    for dbg_idx, dbg_row in enumerate(all_values[1:], start=2):
+        m_val = dbg_row[status_idx].strip() if status_idx < len(dbg_row) else "—нет колонки—"
+        logger.info(f"[SHEETS] Строка {dbg_idx}: M={repr(m_val)} | данные={dbg_row[:4]}")
+
     sent_count = 0
     for row_idx, row in enumerate(all_values[1:], start=2):
         status_val = row[status_idx].strip() if status_idx < len(row) else ""
