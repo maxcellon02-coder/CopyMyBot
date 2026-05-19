@@ -226,19 +226,43 @@ def _detect_human_takeover(message: Message, bot_id: int) -> tuple[bool, str]:
     return True, name
 
 
-async def _notify_handoff(client: Client, chat_id: int, user, mgr_name: str):
+def _build_conv_summary(conv_id: int | None, max_turns: int = 5) -> str:
+    """Собирает последние max_turns обменов из истории в читаемый текст."""
+    if conv_id is None:
+        return ""
+    history = get_history(conv_id)
+    if not history:
+        return ""
+    tail = history[-(max_turns * 2):]
+    lines: list[str] = []
+    for msg in tail:
+        role = msg.get("role", "")
+        content = str(msg.get("content", "")).strip()
+        if not content:
+            continue
+        if len(content) > 200:
+            content = content[:200] + "…"
+        prefix = "👤 Клиент" if role == "user" else "🤖 Бот"
+        lines.append(f"{prefix}: {content}")
+    return "\n".join(lines)
+
+
+async def _notify_handoff(client: Client, chat_id: int, user, mgr_name: str,
+                          conv_id: int | None = None):
     target = settings.manager_group_id or settings.notification_chat_id
     if not target:
         return
     try:
         client_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or str(user.id)
+        summary = _build_conv_summary(conv_id)
+        summary_block = f"\n\n📋 <b>Суть разговора:</b>\n{summary}" if summary else ""
         text = (
-            f"🤝 Диалог передан менеджеру\n"
-            f"Чат: `{chat_id}`\n"
-            f"Клиент: {client_name} (`{user.id}`)\n"
-            f"Менеджер: {mgr_name}"
+            f"🤝 <b>Менеджер {mgr_name} продолжает переговоры</b>\n"
+            f"👤 Клиент: {client_name} (<code>{user.id}</code>)\n"
+            f"💬 Чат: <code>{chat_id}</code>"
+            f"{summary_block}"
         )
-        await client.send_message(target, text)
+        await client.send_message(target, text, parse_mode="html")
     except Exception as e:
         logger.warning(f"Failed to send handoff notification: {e}")
 
