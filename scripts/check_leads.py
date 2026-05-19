@@ -45,9 +45,10 @@ SHEET_NAME      = "Maxcellon Заявки"
 CHECK_INTERVAL  = 2 * 60
 CREDS_FILE      = ROOT / "config" / "service_account.json"
 DONE_MARK       = "✅ Юборилди"
-STATUS_COL      = 13              # колонка M (1-based) — статус отправки
-MANAGER_COL     = 14              # колонка N (1-based) — МЕНЕЖЕР
 DEFAULT_MANAGER = "БОШКА"        # если реферальная ссылка пустая
+# Колонки определяются динамически по заголовкам (см. _find_service_cols)
+_STATUS_HEADER  = "Ечим"         # заголовок колонки-статуса (создаётся если нет)
+_MANAGER_HEADER = "Менежер"      # заголовок колонки менеджера
 SESSION_NAME    = "leads_session"
 SESSIONS_DIR    = ROOT / "data" / "sessions"
 
