@@ -550,11 +550,13 @@ async def _process_message(client: Client, message: Message, handler_start: floa
             _handed_off[conv_key] = (mgr_name, time.time())
             _save_handoffs()
             logger.info(f"[HANDOFF] Reply-chain: {user.id}@{chat_id} → {mgr_name}")
-            await _notify_handoff(client, chat_id, user, mgr_name)
-            if conv_key in _conversations:
-                conv_id_old, _ = _conversations.pop(conv_key)
-                await tracker.close_conversation(conv_id_old, status="handed_off")
-                clear_history(conv_id_old)
+            existing = _conversations.get(conv_key)
+            conv_id_taken = existing[0] if existing else None
+            await _notify_handoff(client, chat_id, user, mgr_name, conv_id=conv_id_taken)
+            if existing:
+                _conversations.pop(conv_key)
+                await tracker.close_conversation(conv_id_taken, status="handed_off")
+                clear_history(conv_id_taken)
             return
 
     t_checks_done = time.time()
