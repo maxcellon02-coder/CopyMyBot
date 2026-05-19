@@ -282,19 +282,28 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         logger.info("[SHEETS] Таблица пуста или только заголовок")
         return 0
 
-    col_map    = _build_col_map(all_values[0])
-    status_idx = STATUS_COL - 1   # M = индекс 12
+    headers = all_values[0]
+    col_map = _build_col_map(headers)
+    status_col_1, manager_col_1 = _find_service_cols(worksheet, headers)
+    status_idx = status_col_1 - 1  # 0-based
 
-    logger.info(f"[SHEETS] Заголовки: {all_values[0]}")
-    logger.info(f"[SHEETS] Всего строк данных: {len(all_values) - 1}")
-    for dbg_idx, dbg_row in enumerate(all_values[1:], start=2):
-        m_val = dbg_row[status_idx].strip() if status_idx < len(dbg_row) else "—нет колонки—"
-        logger.info(f"[SHEETS] Строка {dbg_idx}: M={repr(m_val)} | данные={dbg_row[:4]}")
+    logger.info(f"[SHEETS] Заголовки ({len(headers)} кол.): {headers}")
+    logger.info(f"[SHEETS] Всего строк данных: {len(all_values) - 1} | статус={status_col_1} | менежер={manager_col_1}")
+
+    def _col_letter(n: int) -> str:
+        result = ""
+        while n:
+            n, r = divmod(n - 1, 26)
+            result = chr(65 + r) + result
+        return result
+
+    status_letter  = _col_letter(status_col_1)
+    manager_letter = _col_letter(manager_col_1)
 
     sent_count = 0
     for row_idx, row in enumerate(all_values[1:], start=2):
         status_val = row[status_idx].strip() if status_idx < len(row) else ""
-        if status_val:
+        if status_val == DONE_MARK:
             continue
         if all(_get(row, col_map, k, "") == "" for k in _FIXED_COL_MAP):
             continue
@@ -307,14 +316,14 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
 
         # Помечаем ДО отправки — защита от дублей при параллельных запусках
         try:
-            worksheet.update_acell(f"M{row_idx}", DONE_MARK)
+            worksheet.update_acell(f"{status_letter}{row_idx}", DONE_MARK)
         except Exception as e:
             logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e} — пропускаем")
             continue
 
-        # Записываем менеджера в колонку N (МЕНЕЖЕР)
+        # Записываем менеджера в колонку МЕНЕЖЕР
         try:
-            worksheet.update_acell(f"N{row_idx}", manager)
+            worksheet.update_acell(f"{manager_letter}{row_idx}", manager)
             logger.info(f"[SHEETS] Менежер записан | строка {row_idx} → {manager}")
         except Exception as e:
             logger.warning(f"[SHEETS] Не смог записать менежера строка {row_idx}: {e}")
@@ -326,8 +335,8 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         except Exception as e:
             logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e} — откатываем метку")
             try:
-                worksheet.update_acell(f"M{row_idx}", "")
-                worksheet.update_acell(f"N{row_idx}", "")
+                worksheet.update_acell(f"{status_letter}{row_idx}", "")
+                worksheet.update_acell(f"{manager_letter}{row_idx}", "")
             except Exception:
                 pass
             continue
