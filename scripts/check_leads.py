@@ -180,6 +180,24 @@ def _format_card(row: list[str], col_map: dict, row_num: int, manager: str) -> s
     )
 
 
+def _pick_worksheet(sh: gspread.Spreadsheet) -> gspread.Worksheet:
+    """Выбирает нужный лист: сначала по имени, потом по наибольшему кол-ву строк."""
+    worksheets = sh.worksheets()
+    all_titles = [w.title for w in worksheets]
+    logger.info(f"[SHEETS] Листы в таблице: {all_titles}")
+
+    # 1. Ищем по точному имени
+    for ws in worksheets:
+        if ws.title.strip().lower() == SHEET_NAME.strip().lower():
+            logger.info(f"[SHEETS] Использую лист: «{ws.title}»")
+            return ws
+
+    # 2. Ищем лист с наибольшим кол-вом строк (ответы формы)
+    best = max(worksheets, key=lambda w: w.row_count)
+    logger.info(f"[SHEETS] Лист «{SHEET_NAME}» не найден — использую лист с макс. строками: «{best.title}»")
+    return best
+
+
 def _open_worksheet(gc: gspread.Client) -> gspread.Worksheet:
     sheet_id = (
         os.getenv("GOOGLE_SHEETS_ID", "").strip()
@@ -189,13 +207,13 @@ def _open_worksheet(gc: gspread.Client) -> gspread.Worksheet:
         try:
             sh = gc.open_by_key(sheet_id)
             logger.info(f"[SHEETS] Открыта по ID: {sheet_id[:20]}...")
-            return sh.sheet1
+            return _pick_worksheet(sh)
         except Exception as e:
             logger.warning(f"[SHEETS] Не удалось открыть по ID: {e} — пробую по названию")
     try:
         sh = gc.open(SHEET_NAME)
         logger.info(f"[SHEETS] Открыта по названию: «{SHEET_NAME}»")
-        return sh.sheet1
+        return _pick_worksheet(sh)
     except gspread.SpreadsheetNotFound:
         raise SystemExit(
             f"Таблица «{SHEET_NAME}» не найдена.\n"
