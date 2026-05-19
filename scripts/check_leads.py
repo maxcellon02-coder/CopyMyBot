@@ -308,11 +308,27 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         if all(_get(row, col_map, k, "") == "" for k in _FIXED_COL_MAP):
             continue
 
-        # Определяем менеджера по реферальной ссылке
+        # Определяем менеджера
         referral_val = _get(row, col_map, "referral", default="")
         if referral_val == "—":
             referral_val = ""
-        manager = _detect_manager(referral_val, managers_map)
+        manager_name = _detect_manager(referral_val, managers_map)
+
+        # Ищем @username менеджера
+        if manager_name == DEFAULT_MANAGER:
+            # Нет реф. ссылки → назначаем по очереди (round-robin)
+            mgr_obj = get_next_manager()
+            if mgr_obj:
+                manager_name = mgr_obj["name"]
+                manager_mention = mgr_obj["username"]
+            else:
+                manager_mention = ""
+        else:
+            # Есть имя → ищем username
+            mgr_obj = get_manager_by_name(manager_name)
+            manager_mention = mgr_obj["username"] if mgr_obj else ""
+
+        manager_display = f"{manager_name} ({manager_mention})" if manager_mention else manager_name
 
         # Помечаем ДО отправки — защита от дублей при параллельных запусках
         try:
@@ -321,17 +337,19 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
             logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e} — пропускаем")
             continue
 
-        # Записываем менеджера в колонку МЕНЕЖЕР
+        # Записываем имя менеджера в колонку МЕНЕЖЕР
         try:
-            worksheet.update_acell(f"{manager_letter}{row_idx}", manager)
-            logger.info(f"[SHEETS] Менежер записан | строка {row_idx} → {manager}")
+            worksheet.update_acell(f"{manager_letter}{row_idx}", manager_name)
+            logger.info(f"[SHEETS] Менежер записан | строка {row_idx} → {manager_display}")
         except Exception as e:
             logger.warning(f"[SHEETS] Не смог записать менежера строка {row_idx}: {e}")
 
-        card = _format_card(row, col_map, row_idx - 1, manager)
+        card = _format_card(row, col_map, row_idx - 1, manager_display)
+        # Добавляем @mention отдельной строкой чтобы Telegram создал уведомление
+        mention_line = f"\n{manager_mention} — сизнинг клиент! 👆" if manager_mention else ""
         try:
-            await tg.send_message(target, card, parse_mode=enums.ParseMode.HTML)
-            logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx} | менежер={manager}")
+            await tg.send_message(target, card + mention_line, parse_mode=enums.ParseMode.HTML)
+            logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx} | менежер={manager_display}")
         except Exception as e:
             logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e} — откатываем метку")
             try:
