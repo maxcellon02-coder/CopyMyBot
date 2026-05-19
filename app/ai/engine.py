@@ -96,6 +96,11 @@ def _get_system_prompt() -> str:
 _history: dict[int, list[dict]] = {}
 
 
+def get_history(conv_id: int) -> list[dict]:
+    """Returns a copy of the conversation history for the given conv_id."""
+    return list(_history.get(conv_id, []))
+
+
 def clear_history(conv_id: int) -> None:
     """Call when a conversation is closed or handed off."""
     _history.pop(conv_id, None)
