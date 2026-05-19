@@ -39,6 +39,7 @@ from loguru import logger
 from pyrogram import Client, enums
 
 from app.core.config import settings
+from app.crm.dispatcher import get_manager_by_name, get_next_manager
 
 # ── Настройки ──────────────────────────────────────────────────────────────────
 SHEET_NAME      = "Maxcellon Заявки"
