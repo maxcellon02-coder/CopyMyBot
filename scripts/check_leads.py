@@ -209,13 +209,15 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         logger.error("MANAGER_GROUP_ID не задан в .env")
         return 0
 
+    managers_map = _load_managers_map()
+
     worksheet = _open_worksheet(gc)
     all_values = worksheet.get_all_values()
     if len(all_values) < 2:
         logger.info("[SHEETS] Таблица пуста или только заголовок")
         return 0
 
-    col_map   = _build_col_map(all_values[0])
+    col_map    = _build_col_map(all_values[0])
     status_idx = STATUS_COL - 1   # M = индекс 12
 
     sent_count = 0
@@ -226,6 +228,12 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         if all(_get(row, col_map, k, "") == "" for k in _FIXED_COL_MAP):
             continue
 
+        # Определяем менеджера по реферальной ссылке
+        referral_val = _get(row, col_map, "referral", default="")
+        if referral_val == "—":
+            referral_val = ""
+        manager = _detect_manager(referral_val, managers_map)
+
         # Помечаем ДО отправки — защита от дублей при параллельных запусках
         try:
             worksheet.update_acell(f"M{row_idx}", DONE_MARK)
@@ -233,14 +241,22 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
             logger.warning(f"[SHEETS] Не смог пометить строку {row_idx}: {e} — пропускаем")
             continue
 
-        card = _format_card(row, col_map, row_idx - 1)
+        # Записываем менеджера в колонку N (МЕНЕЖЕР)
+        try:
+            worksheet.update_acell(f"N{row_idx}", manager)
+            logger.info(f"[SHEETS] Менежер записан | строка {row_idx} → {manager}")
+        except Exception as e:
+            logger.warning(f"[SHEETS] Не смог записать менежера строка {row_idx}: {e}")
+
+        card = _format_card(row, col_map, row_idx - 1, manager)
         try:
             await tg.send_message(target, card, parse_mode=enums.ParseMode.HTML)
-            logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx}")
+            logger.info(f"[SHEETS] Карточка отправлена | строка {row_idx} | менежер={manager}")
         except Exception as e:
             logger.error(f"[SHEETS] Ошибка отправки строка {row_idx}: {e} — откатываем метку")
             try:
                 worksheet.update_acell(f"M{row_idx}", "")
+                worksheet.update_acell(f"N{row_idx}", "")
             except Exception:
                 pass
             continue
