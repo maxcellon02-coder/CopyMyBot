@@ -143,7 +143,7 @@ def _e(text: str) -> str:
     return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
+def _format_card(row: list[str], col_map: dict, row_num: int, manager: str) -> str:
     time_str  = _get(row, col_map, "time")
     name      = _get(row, col_map, "name")
     phone     = _get(row, col_map, "phone")
@@ -173,7 +173,8 @@ def _format_card(row: list[str], col_map: dict, row_num: int) -> str:
         f"📊 <b>Ампер соат:</b> {_e(ah)}\n"
         f"📦 <b>Миқдори / Количество:</b> {_e(quantity)}\n"
         f"🔩 <b>Модель:</b> {_e(model)}"
-        f"{notes_line}\n\n"
+        f"{notes_line}\n"
+        f"👨‍💼 <b>Менежер:</b> {_e(manager)}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"↩️ Ответьте на это сообщение чтобы взять заявку"
     )
