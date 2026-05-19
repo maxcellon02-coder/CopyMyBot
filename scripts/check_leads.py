@@ -5,15 +5,17 @@ scripts/check_leads.py — мониторинг Google Таблицы "Maxcellon
     python scripts/check_leads.py
 
 Что делает:
-  • Каждые 5 минут читает Google Sheet "Maxcellon Заявки"
+  • Каждые 2 минуты читает Google Sheet "Maxcellon Заявки"
   • Находит строки где колонка M (Ечим) пустая
+  • Определяет менеджера по реферальной ссылке (колонка "Источник") → пишет в N (МЕНЕЖЕР)
+  • Если реферальная ссылка пустая → пишет "БОШКА" в колонку N
   • Отправляет карточку заявки в MANAGER_GROUP_ID через отдельную Pyrogram сессию
   • Пишет "✅ Юборилди" в колонку M чтобы не отправлять повторно
 
 Требования:
   • config/service_account.json — сервисный аккаунт Google
-  • .env — MANAGER_GROUP_ID, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE
-  • GOOGLE_SHEETS_ID в .env (ID таблицы)
+  • .env — MANAGER_GROUP_ID, GOOGLE_SHEETS_ID, TELEGRAM_API_*
+  • MANAGERS_MAP в .env — маппинг реферал→менеджер (формат: "код1:Имя1,код2:Имя2")
 
 Сессия: data/sessions/leads_session  (НЕ трогает bot_session)
 """
