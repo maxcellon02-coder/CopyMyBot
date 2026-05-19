@@ -29,7 +29,7 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.types import ForceReply, Message
 
 from app.admin.commands import is_paused, register_admin_handlers
-from app.ai.engine import clear_history, generate_reply
+from app.ai.engine import clear_history, generate_reply, get_history
 from app.analytics import tracker
 from app.bot.wizard import (
     build_wizard_context,
