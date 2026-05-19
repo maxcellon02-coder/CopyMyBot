@@ -995,6 +995,11 @@ def create_client() -> Client:
 
     register_admin_handlers(client)
     register_monitor_handler(client)
+    # Lead-боты (Flagma, Gltr и др.) — наивысший приоритет, немедленная пересылка
+    client.add_handler(
+        MessageHandler(on_lead_bot_message, filters=filters.incoming & filters.private),
+        group=-5,
+    )
     client.add_handler(
         MessageHandler(
             on_new_member,
