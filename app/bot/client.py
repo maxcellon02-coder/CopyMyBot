@@ -40,6 +40,7 @@ from app.bot.wizard import (
     start_wizard,
 )
 from app.core.config import settings
+from app.crm.dispatcher import get_lead_bot_usernames, get_next_manager
 from app.crm.monitor import register_monitor_handler
 
 
