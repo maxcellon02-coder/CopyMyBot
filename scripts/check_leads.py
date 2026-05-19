@@ -318,15 +318,19 @@ async def check_and_notify(tg: Client, gc: gspread.Client) -> int:
         if manager_name == DEFAULT_MANAGER:
             # Нет реф. ссылки → назначаем по очереди (round-robin)
             mgr_obj = get_next_manager()
-            if mgr_obj:
-                manager_name = mgr_obj["name"]
-                manager_mention = mgr_obj["username"]
-            else:
-                manager_mention = ""
         else:
-            # Есть имя → ищем username
+            # Есть имя → ищем в активных менеджерах
             mgr_obj = get_manager_by_name(manager_name)
-            manager_mention = mgr_obj["username"] if mgr_obj else ""
+            if mgr_obj is None:
+                # Менеджер больше не активен (напр. Jahongir) → round-robin
+                logger.info(f"[LEADS] Менежер «{manager_name}» не активен → round-robin")
+                mgr_obj = get_next_manager()
+
+        if mgr_obj:
+            manager_name = mgr_obj["name"]
+            manager_mention = mgr_obj["username"]
+        else:
+            manager_mention = ""
 
         manager_display = f"{manager_name} ({manager_mention})" if manager_mention else manager_name
 
