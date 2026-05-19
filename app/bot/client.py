@@ -574,9 +574,11 @@ async def _process_message(client: Client, message: Message, handler_start: floa
             _handed_off[conv_key] = (mgr_name, time.time())
             _save_handoffs()
             logger.info(f"[HANDOFF] During-delay: {user.id}@{chat_id} → {mgr_name}")
-            await _notify_handoff(client, chat_id, user, mgr_name)
-            if conv_key in _conversations:
-                conv_id_delay, _ = _conversations.pop(conv_key)
+            existing_delay = _conversations.get(conv_key)
+            conv_id_delay = existing_delay[0] if existing_delay else None
+            await _notify_handoff(client, chat_id, user, mgr_name, conv_id=conv_id_delay)
+            if existing_delay:
+                _conversations.pop(conv_key)
                 await tracker.close_conversation(conv_id_delay, status="handed_off")
                 clear_history(conv_id_delay)
             return
