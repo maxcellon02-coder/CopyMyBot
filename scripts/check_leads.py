@@ -76,6 +76,8 @@ _COL_ALIASES = {
     "ah":        ["ампер соат", "ампер-час", "ampere soat", "ah", "sig'im", "ёмкость", "амперчас"],
     "quantity":  ["миқдори", "количество", "miqdori", "miqdor", "quantity", "кол-во", "dona"],
     "model":     ["модель", "model"],
+    "size":      ["ўлчамлари", "o'lchamlari", "размер", "gabarity", "size"],
+    "charging":  ["зарядлаш", "zaryadlash", "зарядка", "charging"],
     "notes":     ["изоҳ", "примечание", "izoh", "notes", "comment", "комментарий"],
     "referral":  ["источник", "манба", "реферал", "ref", "referral", "source", "utm_source",
                   "ким юборди", "кто привел", "откуда", "canal", "канал"],
