@@ -223,8 +223,7 @@ def _format_card(row: list[str], col_map: dict, row_num: int, manager: str) -> s
         f"🔩 <b>Модель:</b> {_e(model)}"
         f"{notes_line}\n"
         f"👨‍💼 <b>Менежер:</b> {_e(manager)}\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"↩️ Ответьте на это сообщение чтобы взять заявку"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
 
