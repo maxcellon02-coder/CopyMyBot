@@ -8,7 +8,18 @@
       "PowerShell(cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONPATH=\"E:\\\\Claude code\\\\mybot\"; .venv\\\\Scripts\\\\python.exe scripts/reindex_now.py 2>&1 | Select-String \"chunks|DONE|Qdrant\")",
       "Bash(docker run *)",
       "PowerShell(cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONUTF8=\"1\"; .venv\\\\Scripts\\\\python.exe main.py 2>&1)",
-      "PowerShell(Start-Sleep -Seconds 8; cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONUTF8=\"1\"; .venv\\\\Scripts\\\\python.exe scripts\\\\check_leads.py 2>&1)"
+      "PowerShell(Start-Sleep -Seconds 8; cd \"E:\\\\Claude code\\\\mybot\"; $env:PYTHONUTF8=\"1\"; .venv\\\\Scripts\\\\python.exe scripts\\\\check_leads.py 2>&1)",
+      "Bash(git push *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell($sessions = @\\(\"E:\\\\Claude code\\\\mybot\\\\data\\\\sessions\\\\bot_session.session-journal\", \"E:\\\\Claude code\\\\mybot\\\\data\\\\sessions\\\\leads_session.session-journal\"\\); foreach \\($f in $sessions\\) { $proc = \\(& \"C:\\\\Windows\\\\System32\\\\handle64.exe\" $f 2>$null\\); if \\($proc\\) { $proc } else { \"handle64 недоступен\" } })",
+      "Bash(tasklist /FO CSV)",
+      "PowerShell(Remove-Item *)",
+      "Bash(tasklist)",
+      "Bash(tasklist /v)",
+      "Bash(iconv -f cp866 -t utf-8)",
+      "PowerShell(Start-Process -FilePath \"E:\\\\Claude code\\\\mybot\\\\.venv\\\\Scripts\\\\python.exe\" -ArgumentList \"main.py\" -WorkingDirectory \"E:\\\\Claude code\\\\mybot\" -RedirectStandardOutput \"logs\\\\startup_out.txt\" -RedirectStandardError \"logs\\\\startup_err.txt\" -WindowStyle Hidden)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   },
   "hooks": {
