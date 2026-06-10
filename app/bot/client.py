@@ -341,44 +341,11 @@ async def _handle_name_input(client: Client, message: Message, user) -> None:
 # ── Обработчик новых участников группы ───────────────────────────────────────
 
 async def on_new_member(client: Client, message: Message) -> None:
-    if not message.new_chat_members:
-        return
-    for user in message.new_chat_members:
-        if user.is_bot:
-            continue
-        bot_id = await _get_bot_id(client)
-        if user.id == bot_id:
-            continue
-
-        first_name = user.first_name or "Do'st"
-
-        # Приветствие в группе (видят все)
-        try:
-            await message.reply(
-                f"Assalomu alaykum, {first_name}! 👋\n"
-                f"Maxcellon guruhiga xush kelibsiz!\n\n"
-                f"Sizga qanday yordam bera olaman? 🙂"
-            )
-            logger.info(f"[ONBOARD] Group welcome sent for user={user.id}")
-        except Exception as e:
-            logger.warning(f"[ONBOARD] Could not send group welcome for user={user.id}: {e}")
-
-        # DM: запрос имени (если ещё не зарегистрирован)
-        if user.id not in _contacts:
-            _awaiting_name.add(user.id)
-            try:
-                await client.send_message(
-                    user.id,
-                    f"Assalomu alaykum, {first_name}! 👋\n"
-                    f"Maxcellon guruhiga xush kelibsiz!\n\n"
-                    f"Men — Maxcellon savdo yordamchisiman.\n"
-                    f"Mahsulotlar, narxlar va yetkazib berish bo'yicha savollaringizga javob beraman.\n\n"
-                    f"Avval tanishib olaylik — ismingizni kiriting:",
-                    reply_markup=ForceReply(),
-                )
-                logger.info(f"[ONBOARD] DM name-request sent to user={user.id}")
-            except Exception as e:
-                logger.warning(f"[ONBOARD] Could not DM new member user={user.id}: {e}")
+    # ВАЖНО: бот НЕ пишет первым — ни в группу, ни в личку при вступлении.
+    # Инициативная личка незнакомому пользователю = риск СПАМа (Telegram банит).
+    # Отвечаем и выясняем потребность ТОЛЬКО когда человек напишет сам
+    # (см. on_message: незнакомцу даём приветствие в ответ на его первое сообщение).
+    return
 
 
 # ── Индикатор «печатает…» ─────────────────────────────────────────────────────
