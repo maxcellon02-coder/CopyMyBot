@@ -52,6 +52,6 @@ async def run_full_ingestion(tg_client=None) -> dict:
             logger.error(f"Google Drive ingestion error: {e}")
             stats["errors"].append(f"gdrive: {e}")
 
-    total = stats["telegram"] + stats["gdrive"]
+    total = stats["telegram"] + stats["gdrive"] + stats["catalog"]
     logger.info(f"Ingestion complete — total {total} chunks | {stats}")
     return stats
