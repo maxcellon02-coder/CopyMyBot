@@ -81,9 +81,25 @@ async def main():
     # Создаём Pyrogram клиент (сессия + регистрация обработчиков)
     client = create_client()
 
-    # Запускаем соединение с Telegram
-    # При первом запуске Pyrogram попросит ввести код из SMS/Telegram
-    await client.start()
+    # Запускаем соединение с Telegram (с ретраями при сетевых сбоях —
+    # например, бот стартует сразу после перезагрузки, пока сеть не поднялась)
+    max_attempts = 12
+    for attempt in range(1, max_attempts + 1):
+        try:
+            await client.start()
+            break
+        except ConnectionError:
+            # Клиент уже подключён — всё хорошо
+            break
+        except Exception as e:
+            wait = min(60, 5 * attempt)
+            logger.warning(
+                f"Не удалось подключиться к Telegram "
+                f"(попытка {attempt}/{max_attempts}): {e} — повтор через {wait}с"
+            )
+            if attempt == max_attempts:
+                raise
+            await asyncio.sleep(wait)
     logger.info("Telegram соединение установлено")
 
     # Прогрев кэша пиров: свежая сессия не знает групп/каналов по id (-100...)
