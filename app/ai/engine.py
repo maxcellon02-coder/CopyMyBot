@@ -144,8 +144,43 @@ def _photo_reply(lang: str, name: str) -> str:
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
+async def _send_local_files(
+    tg_client: Client, chat_id: int, paths: list, caption: Optional[str] = None
+) -> int:
+    """Отправляет локальные файлы клиенту, выбирая метод по расширению."""
+    sent = 0
+    for i, p in enumerate(paths):
+        cap = caption if i == 0 else None
+        ext = os.path.splitext(p)[1].lower()
+        try:
+            if ext in (".jpg", ".jpeg", ".png"):
+                await tg_client.send_photo(chat_id, p, caption=cap)
+            elif ext in (".mp4", ".mov", ".webm"):
+                await tg_client.send_video(chat_id, p, caption=cap)
+            else:  # pdf, docx, webp, pptx → документом
+                await tg_client.send_document(chat_id, p, caption=cap)
+            sent += 1
+            await asyncio.sleep(0.4)
+        except Exception as e:
+            logger.warning(f"[MEDIA] Не удалось отправить {p}: {e}")
+    return sent
+
+
 async def _send_media_for_model(tg_client: Client, chat_id: int, model_query: str) -> None:
-    """Ищет фото/видео модели в Qdrant и пересылает из канала в чат."""
+    """Фото/видео модели: сначала локальный кэш SAPO SMM, затем канал (Qdrant)."""
+    # 1) Локальный кэш SAPO SMM
+    try:
+        from app.media import smm_cache
+        paths = smm_cache.lookup(model_query, want="photo", limit=4)
+        if paths:
+            n = await _send_local_files(tg_client, chat_id, paths)
+            if n:
+                logger.info(f"[MEDIA] Отправлено {n} локальных фото/видео для {model_query!r}")
+                return
+    except Exception as e:
+        logger.warning(f"[MEDIA] Локальный поиск фото не удался для {model_query!r}: {e}")
+
+    # 2) Фолбэк: пересылка из Telegram-канала через Qdrant
     from app.rag.retriever import retrieve_media
     try:
         items = await retrieve_media(model_query, top_k=1)
@@ -161,6 +196,21 @@ async def _send_media_for_model(tg_client: Client, chat_id: int, model_query: st
         logger.info(f"[MEDIA] Forwarded {item['media_type']} msg={item['message_id']} score={item['score']}")
     except Exception as e:
         logger.warning(f"[MEDIA] Could not forward media for {model_query!r}: {e}")
+
+
+async def _send_datasheet_for_model(tg_client: Client, chat_id: int, model_query: str) -> None:
+    """Отправляет PDF-датащит/паспорт модели из локального кэша SAPO SMM."""
+    try:
+        from app.media import smm_cache
+        paths = smm_cache.lookup(model_query, want="doc", limit=1)
+        if not paths:
+            logger.info(f"[MEDIA] Датащит не найден для {model_query!r}")
+            return
+        n = await _send_local_files(tg_client, chat_id, paths)
+        if n:
+            logger.info(f"[MEDIA] Отправлен датащит для {model_query!r}")
+    except Exception as e:
+        logger.warning(f"[MEDIA] Датащит не удалось отправить для {model_query!r}: {e}")
 
 
 
