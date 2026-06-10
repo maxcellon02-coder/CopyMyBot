@@ -17,3 +17,12 @@ data/tg_ingest_state.json
 data/drive_ingest_state.json
 data/handoffs.json
 data/contacts.json
+
+# Runtime / generated artifacts
+data/bot.pid
+data/rr_state.json
+data/media_cache.json
+logs/*.err
+logs/*.out
+logs/*.txt
+unknown_errors.txt
