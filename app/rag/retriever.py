@@ -48,6 +48,40 @@ def _is_price_query(text: str) -> bool:
     return any(kw in lower for kw in _PRICE_KEYWORDS)
 
 
+# ── Структурный поиск по каталогу: точный матч напряжения/ёмкости ─────────────
+_VOLT_RE = re.compile(r"(\d{2,3}(?:\.\d)?)\s*[vв]", re.IGNORECASE)       # 48V, 80в, 25.6V
+_AH_RE = re.compile(r"(\d{2,4})\s*(?:ah|а[/.\s]?ч|ампер|а·ч)", re.IGNORECASE)  # 400Ah, 245 а/ч
+
+
+def _parse_specs(query: str) -> tuple[Optional[str], Optional[str]]:
+    volt = _VOLT_RE.search(query)
+    ah = _AH_RE.search(query)
+    return (volt.group(1) if volt else None, ah.group(1) if ah else None)
+
+
+async def _catalog_by_specs(vector: list, query: str, top_k: int) -> Optional[list]:
+    """Если в запросе есть V/Ah — фильтруем каталог по ним (точный матч).
+
+    Пробуем V+Ah, затем Ah, затем V — первый непустой результат.
+    """
+    volt, ah = _parse_specs(query)
+    if not (volt or ah):
+        return None
+    attempts: List[dict] = []
+    if volt and ah:
+        attempts.append({"voltage": volt, "ah": ah})
+    if ah:
+        attempts.append({"ah": ah})
+    if volt:
+        attempts.append({"voltage": volt})
+    for extra in attempts:
+        flt = {"doc_type": "catalog", **extra}
+        results = await get_store().search(vector, top_k=top_k, filter_by=flt)
+        if results:
+            return results
+    return None
+
+
 def _fmt_results(results: list) -> str:
     parts: List[str] = []
     for r in results:
