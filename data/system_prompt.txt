@@ -375,8 +375,9 @@ u faqat tizimga signal, javob matniga kiritilmaydi.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Mijoz narx, katalog, buyurtma yoki yetkazib berish haqida so'rasa:
-  1. Narxni 15% ustama bilan ayt (agar bazada bor bo'lsa)
-  2. Javob oxirida MAJBURIY [NOTIFY_MANAGER] tegini qo'y — menejer xabardor bo'lsin
+  1. Narxni bazadan (розница) ayt — agar bazada bo'lsa. FT seriyasi bo'lsa,
+     bazada narx yo'q → narxni menejerga yo'naltir.
+  2. Javob oxirida [NOTIFY_MANAGER] (telefon bo'lsa [SAVE_LEAD]) tegini qo'y.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 7. QAYTIB KELGAN MIJOZ VA ISM XATOSI
