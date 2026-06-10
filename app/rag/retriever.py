@@ -105,6 +105,11 @@ async def retrieve(
     """
     vector = await embed_query(query)
 
+    # 0) Точный матч каталога по напряжению/ёмкости (если есть в запросе)
+    structured = await _catalog_by_specs(vector, query, top_k)
+    if structured:
+        return _fmt_results(structured)
+
     if _is_price_query(query):
         # 1) Каталог «Master Data Base» — основной источник со структурными ценами
         results = await get_store().search(
