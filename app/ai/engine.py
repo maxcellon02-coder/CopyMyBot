@@ -303,11 +303,17 @@ async def generate_reply(
         )
         reply_text = response.content[0].text.strip()
 
-        # [NOTIFY_MANAGER] — убираем тег, ставим флаг для CRM
+        # [NOTIFY_MANAGER] — убираем тег, ставим флаг для CRM (горячий лид → группа)
         force_notify = False
         if "[NOTIFY_MANAGER]" in reply_text:
             reply_text = reply_text.replace("[NOTIFY_MANAGER]", "").strip()
             force_notify = True
+
+        # [SAVE_LEAD] — заявка собрана → пишем строку в форму (лист заявок)
+        save_lead = False
+        if "[SAVE_LEAD]" in reply_text:
+            reply_text = reply_text.replace("[SAVE_LEAD]", "").strip()
+            save_lead = True
 
         # [MEDIA_SEND: model] — убираем тег, отправляем фото/видео модели
         media_match = re.search(r'\[MEDIA_SEND:\s*([^\]]+)\]', reply_text)
