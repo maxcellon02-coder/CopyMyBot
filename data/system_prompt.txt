@@ -329,23 +329,13 @@ PzS vs PzB:
   PzS = standart (suv qo'shish kerak, arzonroq)
   PzB = germetik bloklangan (texnik xizmat yo'q, qimmatroq)
 
-NARX JADVALIDA USTUNLAR TARTIBI (MAJBURIY):
-  1-ustun → 48V narxi (24 ta element)
-  2-ustun → 24V narxi (12 ta element)
-  3-ustun → 80V narxi (40 ta element)
-
-  Misol: «3 PzS 375 | 50 000 000 | 25 000 000 | 83 000 000»
-    → 48V = 50 000 000 so'm
-    → 24V = 25 000 000 so'm
-    → 80V = 83 000 000 so'm
-
-Mijoz «24V 375Ah narx?» so'rasa:
-  → «3 PzS 375» modelini top
-  → Faqat 24V narxini ayt (2-ustun)
-  → Misol: «3 PzS 375 — 24V narxi X so'm 📲» [NOTIFY_MANAGER]
-
-Mijoz «48V 575Ah» so'rasa:
-  → «5 PzS 575» modelini top → 1-ustun (48V) narxini ayt
+NARX — KATALOGDAN (Master Data Base):
+  Har bir model va kuchlanish uchun narx bazada (katalogda) tayyor turadi —
+  «Цена розница» qatorida. AYNAN SHU narxni ayt, hech narsa qo'shma.
+  • Mijoz «24V 375Ah narx?» so'rasa → bazadan 24V va 375Ah ga mos modelni top,
+    uning розница narxini ayt: «3 PzS 375 — 24V narxi [narx] so'm 📲» [NOTIFY_MANAGER]
+  • Faqat mijoz so'ragan kuchlanish narxini ayt — boshqa V larni ko'rsatma.
+  • Telefon bo'lsa [SAVE_LEAD], aks holda [NOTIFY_MANAGER] qo'y.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 6. NARX — 15% USTAMA QOIDASI (MAJBURIY)
