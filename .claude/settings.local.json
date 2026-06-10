@@ -37,7 +37,18 @@
       "Bash(cd \"E:/Claude code/mybot\")",
       "Bash(cat .gitignore)",
       "Bash(git rm *)",
-      "Bash(git commit -m 'fix: leads checker shares bot_session; cleanup gitignore for runtime files *)"
+      "Bash(git commit -m 'fix: leads checker shares bot_session; cleanup gitignore for runtime files *)",
+      "Bash(powershell -c \"if\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\){'RUNNING pid='+\\(Get-Content data/bot.pid\\)}else{'DIED'}\")",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import ast; ast.parse\\(open\\('main.py',encoding='utf-8'\\).read\\(\\)\\); print\\('main.py OK'\\)\")",
+      "Bash(powershell -c \"if\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\){'RUNNING bot pid='+\\(Get-Content data/bot.pid\\)}else{'DIED'}\")",
+      "Bash(cat logs/watchdog.log)",
+      "Bash(cat data/supervisor.pid)",
+      "Bash(cat data/bot.pid)",
+      "Bash(powershell -c \"'sup alive: '+[bool]\\(Get-Process -Id \\(Get-Content 'data/supervisor.pid'\\) -EA SilentlyContinue\\); 'bot alive: '+[bool]\\(Get-Process -Id \\(Get-Content 'data/bot.pid'\\) -EA SilentlyContinue\\)\")",
+      "Bash(powershell -c 'Stop-Process -Id __TRACKED_VAR__ -Force -EA SilentlyContinue')",
+      "Bash(powershell -c \"'new bot alive: '+[bool]\\(Get-Process -Id \\(Get-Content 'data/bot.pid'\\) -EA SilentlyContinue\\)\")",
+      "Bash(powershell -c \"'supervisor: '+[bool]\\(Get-Process -Id \\(Get-Content data/supervisor.pid\\) -EA SilentlyContinue\\); 'bot: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)+' \\(pid '+\\(Get-Content data/bot.pid\\)+'\\)'\")",
+      "Bash(git commit -m 'chore: bot supervisor + autostart, startup reconnect retry *)"
     ]
   },
   "hooks": {
