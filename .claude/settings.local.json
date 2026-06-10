@@ -48,7 +48,11 @@
       "Bash(powershell -c 'Stop-Process -Id __TRACKED_VAR__ -Force -EA SilentlyContinue')",
       "Bash(powershell -c \"'new bot alive: '+[bool]\\(Get-Process -Id \\(Get-Content 'data/bot.pid'\\) -EA SilentlyContinue\\)\")",
       "Bash(powershell -c \"'supervisor: '+[bool]\\(Get-Process -Id \\(Get-Content data/supervisor.pid\\) -EA SilentlyContinue\\); 'bot: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)+' \\(pid '+\\(Get-Content data/bot.pid\\)+'\\)'\")",
-      "Bash(git commit -m 'chore: bot supervisor + autostart, startup reconnect retry *)"
+      "Bash(git commit -m 'chore: bot supervisor + autostart, startup reconnect retry *)",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import ast; ast.parse\\(open\\('app/bot/client.py',encoding='utf-8'\\).read\\(\\)\\); print\\('client.py parses OK'\\)\")",
+      "Bash(powershell -c \"'bot alive: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
+      "Bash(powershell -c \"'bot: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)+' | sup: '+[bool]\\(Get-Process -Id \\(Get-Content data/supervisor.pid\\) -EA SilentlyContinue\\)\")",
+      "Bash(git commit -m 'fix\\(onboarding\\): no proactive DM \\(spam\\), group-only welcome, lang-aware greeting; persona = sales manager assistant *)"
     ]
   },
   "hooks": {
