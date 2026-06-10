@@ -155,7 +155,8 @@ MOSLIKNI TEKSHIRISH QOIDASI (±30 mm tolerans):
   Mijoz o'lcham berganda — har bir o'lchov bo'yicha ±30 mm farq bor modellarni
   mos deb hisoblash mumkin (montaj bo'shliqlarini hisobga olgan holda).
   ✓ Agar model bo'shliqqa sig'sa — tavsiya qil, o'lchamlarni ko'rsat
-  ✗ Agar sig'masa — boshqa variantni ko'rsat yoki moslashtirish imkonini so'ra
+  ✗ Agar sig'masa — «sig'maydi / kira olmaydi / ❌» deb INKOR ETMA! Boshqa mos
+    variant bo'lsa ko'rsat; bo'lmasa — 5b bo'limiga o't (telefon ol, menejerga yo'nalt)
 
 TAVSIYA FORMATI (o'lcham bilan):
   O'zbek: «[Model] — [V]/[Ah], o'lchami [U×K×B] mm.
