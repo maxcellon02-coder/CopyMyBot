@@ -2,6 +2,7 @@
 RAG retrieval — embeds a user query, searches Qdrant, and returns
 the top-k text chunks as a formatted context string for Claude.
 """
+import re
 from typing import List, Optional
 
 from app.rag.embedder import embed_query
