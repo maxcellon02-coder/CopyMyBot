@@ -86,6 +86,24 @@ async def main():
     await client.start()
     logger.info("Telegram соединение установлено")
 
+    # Прогрев кэша пиров: свежая сессия не знает групп/каналов по id (-100...)
+    # → "Peer id invalid" при отправке заявок и чтении RAG-каналов.
+    # Один проход по диалогам наполняет кэш пиров в session storage.
+    try:
+        dlg_count = 0
+        async for _ in client.get_dialogs():
+            dlg_count += 1
+        logger.info(f"Кэш пиров прогрет: {dlg_count} диалог(ов)")
+    except Exception as e:
+        logger.warning(f"Не удалось прогреть кэш пиров: {e}")
+
+    # Строим кэш медиафайлов SAPO SMM (фото/видео/датащиты по моделям)
+    try:
+        from app.media.smm_cache import build_cache
+        build_cache(write=True)
+    except Exception as e:
+        logger.warning(f"Не удалось построить кэш медиа SAPO SMM: {e}")
+
     # Передаём клиент в RAG-планировщик (нужен для чтения каналов)
     set_client(client)
 
@@ -94,7 +112,7 @@ async def main():
     logger.info("RAG-планировщик запущен (обновление каждый час)")
 
     # Запускаем мониторинг заявок из Google Таблицы
-    leads_task = asyncio.create_task(run_leads_checker())
+    leads_task = asyncio.create_task(run_leads_checker(client))
     logger.info("Мониторинг заявок запущен (каждые 2 мин.)")
 
     # Ждём — бот работает пока не нажать Ctrl+C
