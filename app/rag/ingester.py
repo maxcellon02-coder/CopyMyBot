@@ -20,7 +20,17 @@ async def run_full_ingestion(tg_client=None) -> dict:
     store = QdrantStore()
     await store.ensure_collection()
 
-    stats: dict = {"telegram": 0, "gdrive": 0, "errors": []}
+    stats: dict = {"telegram": 0, "gdrive": 0, "catalog": 0, "errors": []}
+
+    # Каталог «Master Data Base» (Google Sheet) — основной источник знаний
+    if settings.catalog_sheet_id:
+        from app.rag.sources.sheets import SheetCatalogIngester
+        try:
+            n = await SheetCatalogIngester(store).ingest_all()
+            stats["catalog"] = n
+        except Exception as e:
+            logger.error(f"Catalog ingestion error: {e}")
+            stats["errors"].append(f"catalog: {e}")
 
     # Telegram channels + groups
     if tg_client and settings.monitored_channels:
