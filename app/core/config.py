@@ -74,6 +74,11 @@ class Settings:
     drive_folder_id: str = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
     service_account_json: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
 
+    # ── SAPO SMM media cache (фото/видео/датащиты товаров) ───────────────────
+    # SQLite-база платформы SMM (вкладка «Медиа») и корень со static-файлами.
+    smm_db_path: str = os.getenv("SMM_DB_PATH", r"E:\Claude code\sapo\smm\smm.db")
+    smm_media_root: str = os.getenv("SMM_MEDIA_ROOT", r"E:\Claude code\sapo\smm\static")
+
     # ── Qdrant ────────────────────────────────────────────────────────────────
     qdrant_url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_api_key: str = os.getenv("QDRANT_API_KEY", "")
