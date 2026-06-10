@@ -1,34 +1,28 @@
-# install_autostart.ps1 -- register the supervisor to auto-start at user logon.
+# install_autostart.ps1 -- auto-start the supervisor at user logon (no admin).
 #
 # Run once:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File "E:\Claude code\mybot\scripts\install_autostart.ps1"
 #
-# Creates Scheduled Task "MaxcellonBotSupervisor": at logon it launches
-# bot_supervisor.ps1 (hidden), which keeps the bot alive. The task itself is
-# restarted every minute if the supervisor process ever dies.
+# Adds an HKCU\...\Run entry "MaxcellonBotSupervisor" that launches
+# bot_supervisor.ps1 (hidden) at logon. The supervisor keeps the bot alive.
+# This needs NO administrator rights (unlike a Scheduled Task).
 #
 # Remove autostart:
-#   Unregister-ScheduledTask -TaskName "MaxcellonBotSupervisor" -Confirm:$false
+#   Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "MaxcellonBotSupervisor"
 #
 # ASCII-only (parsed by Windows PowerShell 5.1).
 
 $ErrorActionPreference = "Stop"
 
-$Root     = "E:\Claude code\mybot"
-$Sup      = Join-Path $Root "scripts\bot_supervisor.ps1"
-$TaskName = "MaxcellonBotSupervisor"
+$Root    = "E:\Claude code\mybot"
+$Sup     = Join-Path $Root "scripts\bot_supervisor.ps1"
+$RunKey  = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$Name    = "MaxcellonBotSupervisor"
 
-$psArgs = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Sup`""
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $psArgs -WorkingDirectory $Root
-$trigger = New-ScheduledTaskTrigger -AtLogOn
-$settings = New-ScheduledTaskSettingsSet `
-    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-    -StartWhenAvailable `
-    -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
-    -ExecutionTimeLimit ([TimeSpan]::Zero)
+$cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Sup`""
 
-Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
-    -Settings $settings -Description "Maxcellon Telegram bot supervisor (auto-restart)" -Force | Out-Null
+Set-ItemProperty -Path $RunKey -Name $Name -Value $cmd
 
-Write-Host "OK: task '$TaskName' registered (starts at logon)."
-Write-Host "Start now: Start-ScheduledTask -TaskName '$TaskName'"
+Write-Host "OK: autostart registered in HKCU Run -> '$Name'"
+Write-Host "Value: $cmd"
+Write-Host "It will start automatically at next logon. Supervisor is already running now."
