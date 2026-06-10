@@ -52,7 +52,10 @@
       "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import ast; ast.parse\\(open\\('app/bot/client.py',encoding='utf-8'\\).read\\(\\)\\); print\\('client.py parses OK'\\)\")",
       "Bash(powershell -c \"'bot alive: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
       "Bash(powershell -c \"'bot: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)+' | sup: '+[bool]\\(Get-Process -Id \\(Get-Content data/supervisor.pid\\) -EA SilentlyContinue\\)\")",
-      "Bash(git commit -m 'fix\\(onboarding\\): no proactive DM \\(spam\\), group-only welcome, lang-aware greeting; persona = sales manager assistant *)"
+      "Bash(git commit -m 'fix\\(onboarding\\): no proactive DM \\(spam\\), group-only welcome, lang-aware greeting; persona = sales manager assistant *)",
+      "Bash(powershell -c \"'supervisor pid '+\\(Get-Content data/supervisor.pid\\)+': '+[bool]\\(Get-Process -Id \\(Get-Content data/supervisor.pid\\) -EA SilentlyContinue\\); 'bot pid '+\\(Get-Content data/bot.pid\\)+': '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
+      "Bash(powershell -c \"\\(Get-ItemProperty 'HKCU:\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run' -Name MaxcellonBotSupervisor -EA SilentlyContinue\\).MaxcellonBotSupervisor; if\\(-not $?\\){'нет'}\")",
+      "Bash(git commit -m 'chore: update local permissions *)"
     ]
   },
   "hooks": {
