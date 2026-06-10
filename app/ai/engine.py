@@ -309,12 +309,19 @@ async def generate_reply(
             reply_text = reply_text.replace("[NOTIFY_MANAGER]", "").strip()
             force_notify = True
 
-        # [MEDIA_SEND: model] — убираем тег, пересылаем медиа из канала
+        # [MEDIA_SEND: model] — убираем тег, отправляем фото/видео модели
         media_match = re.search(r'\[MEDIA_SEND:\s*([^\]]+)\]', reply_text)
         if media_match and tg_client:
             model_query = media_match.group(1).strip()
             reply_text = re.sub(r'\[MEDIA_SEND:\s*[^\]]+\]', '', reply_text).strip()
             asyncio.create_task(_send_media_for_model(tg_client, message.chat.id, model_query))
+
+        # [SEND_DOC: model] — убираем тег, отправляем PDF-датащит модели
+        doc_match = re.search(r'\[SEND_DOC:\s*([^\]]+)\]', reply_text)
+        if doc_match and tg_client:
+            doc_query = doc_match.group(1).strip()
+            reply_text = re.sub(r'\[SEND_DOC:\s*[^\]]+\]', '', reply_text).strip()
+            asyncio.create_task(_send_datasheet_for_model(tg_client, message.chat.id, doc_query))
 
         u = response.usage
         logger.info(
