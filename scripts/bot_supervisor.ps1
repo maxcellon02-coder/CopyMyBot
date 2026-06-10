@@ -72,10 +72,10 @@ while ($true) {
     Wait-Process -Id $p.Id
     $code   = $p.ExitCode
     $uptime = [int]((New-TimeSpan -Start $start -End (Get-Date)).TotalSeconds)
-    Write-WLog ("Bot exited pid={0} code={1} uptime={2}s" -f $p.Id, $code, $uptime)
+    Write-WLog "Bot exited pid=$($p.Id) code=$code uptime=$uptime sec"
 
     if ($uptime -lt 30) { $failFast++ } else { $failFast = 0 }
     $backoff = [Math]::Min(60, 5 * [Math]::Max(1, $failFast))
-    Write-WLog "Restarting in ${backoff}s (failFast=$failFast)"
+    Write-WLog "Restarting in $backoff sec (failFast=$failFast)"
     Start-Sleep -Seconds $backoff
 }
