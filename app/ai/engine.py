@@ -364,22 +364,36 @@ async def generate_reply(
     phone = None
     if user and hasattr(user, "phone_number"):
         phone = user.phone_number
-    asyncio.create_task(maybe_extract_lead(
-        conv_id=conv_id,
-        platform="telegram",
-        external_user_id=str(user.id) if user else "unknown",
-        user_name=user_name,
-        phone=phone,
-        conversation_text=convo_text,
-        tg_client=tg_client,
-        photos=photos or [],
-        force_notify=force_notify,
-        chat_id=message.chat.id if message else None,
-        message_id=message.id if message else None,
-        user_id=user.id if user else None,
-        user_questions=[t["content"] for t in hist if t["role"] == "user"][-6:],
-        user_tg=f"@{user.username}" if user and user.username else None,
-        chat_title=getattr(message.chat, "title", None) if message else "Личка",
-    ))
+    user_tg = f"@{user.username}" if user and user.username else None
+
+    if save_lead:
+        # Заявка собрана → пишем в форму (лист). check_leads сам отправит
+        # карточку менеджеру — поэтому быстрый дубликат-карточку не шлём.
+        from app.crm.lead_form import save_lead_to_sheet
+        asyncio.create_task(save_lead_to_sheet(
+            conv_id=conv_id,
+            conversation_text=convo_text,
+            user_name=user_name,
+            phone=phone,
+            user_tg=user_tg,
+        ))
+    else:
+        asyncio.create_task(maybe_extract_lead(
+            conv_id=conv_id,
+            platform="telegram",
+            external_user_id=str(user.id) if user else "unknown",
+            user_name=user_name,
+            phone=phone,
+            conversation_text=convo_text,
+            tg_client=tg_client,
+            photos=photos or [],
+            force_notify=force_notify,
+            chat_id=message.chat.id if message else None,
+            message_id=message.id if message else None,
+            user_id=user.id if user else None,
+            user_questions=[t["content"] for t in hist if t["role"] == "user"][-6:],
+            user_tg=user_tg,
+            chat_title=getattr(message.chat, "title", None) if message else "Личка",
+        ))
 
     return reply_text
