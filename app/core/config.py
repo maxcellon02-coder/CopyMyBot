@@ -79,6 +79,13 @@ class Settings:
     smm_db_path: str = os.getenv("SMM_DB_PATH", r"E:\Claude code\sapo\smm\smm.db")
     smm_media_root: str = os.getenv("SMM_MEDIA_ROOT", r"E:\Claude code\sapo\smm\static")
 
+    # ── Каталог товаров «Master Data Base» (Google Sheet) ────────────────────
+    # Главный источник знаний бота: модель, тип, V, Ah, цена, наличие, применение.
+    catalog_sheet_id: str = os.getenv(
+        "CATALOG_SHEET_ID", "1gPNAgTZ_yFtxq5AuM-jD6rB51c2r-d-5UXd0Wt0_lQQ"
+    )
+    catalog_worksheet: str = os.getenv("CATALOG_WORKSHEET", "Master Data Base")
+
     # ── Qdrant ────────────────────────────────────────────────────────────────
     qdrant_url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_api_key: str = os.getenv("QDRANT_API_KEY", "")
