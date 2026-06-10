@@ -19,7 +19,25 @@
       "Bash(iconv -f cp866 -t utf-8)",
       "PowerShell(Start-Process -FilePath \"E:\\\\Claude code\\\\mybot\\\\.venv\\\\Scripts\\\\python.exe\" -ArgumentList \"main.py\" -WorkingDirectory \"E:\\\\Claude code\\\\mybot\" -RedirectStandardOutput \"logs\\\\startup_out.txt\" -RedirectStandardError \"logs\\\\startup_err.txt\" -WindowStyle Hidden)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Read(//e/Claude code/agms/**)",
+      "Bash(npx tsx *)",
+      "Bash(\\\\.json\")",
+      "PowerShell(Get-ChildItem \"E:\\\\Claude code\\\\agms\" -Force | Where-Object { $_.Name -match \"env|\\\\.json$\" } | Select-Object Name)",
+      "Bash(python3 *)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Set-Content *)",
+      "Bash(python -c \"import sqlite3; c=sqlite3.connect\\('smm/smm.db'\\); [print\\(r[0]\\) for r in c.execute\\(\\\\\"SELECT name FROM sqlite_master WHERE type='table'\\\\\"\\)]\")",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe scripts/build_media_cache.py)",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import app.ai.engine, app.media.smm_cache, app.core.config; import ast; ast.parse\\(open\\('main.py',encoding='utf-8'\\).read\\(\\)\\); print\\('OK: engine + smm_cache + config import clean, main.py parses'\\)\")",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import app.ai.engine, app.crm.lead_form; print\\('OK: engine + lead_form import clean'\\)\")",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import app.rag.ingester, app.rag.retriever, app.rag.sources.sheets, app.core.config; print\\('OK: all A-stage modules import clean'\\)\")",
+      "Bash(tasklist //FI \"PID eq 41708\")",
+      "Bash(powershell -c \"if\\(Get-Process -Id 41708 -EA SilentlyContinue\\){'RUNNING 41708'}else{'DIED'}\")",
+      "Bash(cd \"E:/Claude code/mybot\")",
+      "Bash(cat .gitignore)",
+      "Bash(git rm *)",
+      "Bash(git commit -m 'fix: leads checker shares bot_session; cleanup gitignore for runtime files *)"
     ]
   },
   "hooks": {

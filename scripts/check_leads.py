@@ -413,8 +413,13 @@ async def main():
         logger.info("[TG] Отключено")
 
 
-async def run_leads_checker():
-    """Фоновая задача для запуска из main.py: мониторинг Google Таблицы."""
+async def run_leads_checker(tg: "Client | None" = None):
+    """Фоновая задача для запуска из main.py: мониторинг Google Таблицы.
+
+    Если передан готовый клиент `tg` (основной bot_session) — используем его и
+    НЕ создаём отдельную сессию leads_session. Это избегает AUTH_KEY_DUPLICATED
+    (одна и та же сессия в двух местах) и второго входа по коду.
+    """
     if not CREDS_FILE.exists():
         logger.error(f"[LEADS] {CREDS_FILE} не найден — мониторинг заявок отключён")
         return
@@ -422,15 +427,19 @@ async def run_leads_checker():
     creds = Credentials.from_service_account_file(str(CREDS_FILE), scopes=SCOPES)
     gc = gspread.authorize(creds)
 
-    tg = Client(
-        name=SESSION_NAME,
-        api_id=settings.api_id,
-        api_hash=settings.api_hash,
-        phone_number=settings.phone,
-        workdir=str(SESSIONS_DIR),
-    )
-    await tg.start()
-    logger.info(f"[LEADS] Подключено | сессия={SESSION_NAME}")
+    own_client = tg is None
+    if own_client:
+        tg = Client(
+            name=SESSION_NAME,
+            api_id=settings.api_id,
+            api_hash=settings.api_hash,
+            phone_number=settings.phone,
+            workdir=str(SESSIONS_DIR),
+        )
+        await tg.start()
+        logger.info(f"[LEADS] Подключено | сессия={SESSION_NAME}")
+    else:
+        logger.info("[LEADS] Использую основной клиент bot_session (без отдельной сессии)")
     logger.info(f"[LEADS] Проверка каждые {CHECK_INTERVAL // 60} мин.")
 
     try:
@@ -447,8 +456,9 @@ async def run_leads_checker():
                 logger.error(f"[LEADS] Ошибка: {e}", exc_info=True)
             await asyncio.sleep(CHECK_INTERVAL)
     finally:
-        await tg.stop()
-        logger.info("[LEADS] Отключено")
+        if own_client:
+            await tg.stop()
+            logger.info("[LEADS] Отключено")
 
 
 if __name__ == "__main__":
