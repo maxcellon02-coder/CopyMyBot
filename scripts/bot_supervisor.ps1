@@ -1,15 +1,18 @@
-# bot_supervisor.ps1 — следит за ботом и перезапускает при падении.
+# bot_supervisor.ps1 -- keeps the bot alive: restarts it whenever it exits.
 #
-# Запуск вручную (в фоне):
+# Run manually (background):
 #   powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "E:\Claude code\mybot\scripts\bot_supervisor.ps1"
-# Или через автозапуск: scripts\install_autostart.ps1 (Task Scheduler при входе).
+# Or via autostart: scripts\install_autostart.ps1 (Task Scheduler at logon).
 #
-# Что делает:
-#   • запускает .venv\Scripts\python.exe main.py (скрытое окно)
-#   • пишет pid бота в data\bot.pid
-#   • ждёт завершения процесса; при выходе логирует код+аптайм в logs\watchdog.log
-#   • перезапускает с backoff (5..60с), быстрые падения → больше пауза
-#   • одиночный запуск: повторный супервизор не стартует (lock data\supervisor.pid)
+# Behaviour:
+#   - launches .venv\Scripts\python.exe main.py (hidden window)
+#   - writes bot pid to data\bot.pid
+#   - waits for the process; on exit logs code+uptime to logs\watchdog.log
+#   - restarts with backoff (5..60s); rapid crashes -> longer pause
+#   - single instance: a second supervisor will not start (lock data\supervisor.pid)
+#
+# ASCII-only on purpose: this file is parsed by Windows PowerShell 5.1, which
+# misreads UTF-8-without-BOM and would break on non-ASCII characters.
 
 $ErrorActionPreference = "Stop"
 
@@ -26,13 +29,13 @@ function Write-WLog([string]$msg) {
     Add-Content -Path $WLog -Value "$ts  $msg" -Encoding utf8
 }
 
-# ── Одиночный запуск супервизора ────────────────────────────────────────────
+# -- Single supervisor instance --------------------------------------------
 if (Test-Path $SupLock) {
     $oldSup = Get-Content $SupLock -ErrorAction SilentlyContinue
     if ($oldSup) {
         $alive = Get-Process -Id $oldSup -ErrorAction SilentlyContinue
         if ($alive -and $alive.ProcessName -like "powershell*") {
-            Write-WLog "Supervisor already running (pid=$oldSup) — exit"
+            Write-WLog "Supervisor already running (pid=$oldSup) - exit"
             return
         }
     }
@@ -40,7 +43,7 @@ if (Test-Path $SupLock) {
 Set-Content -Path $SupLock -Value $PID -Encoding ascii
 Write-WLog "Supervisor started (pid=$PID)"
 
-# ── Остановить уже запущенный бот (чтобы не было двух сессий) ────────────────
+# -- Stop an already running bot (avoid two sessions) ----------------------
 if (Test-Path $PidFile) {
     $oldBot = Get-Content $PidFile -ErrorAction SilentlyContinue
     if ($oldBot) {
