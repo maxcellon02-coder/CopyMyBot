@@ -20,6 +20,7 @@ data/contacts.json
 
 # Runtime / generated artifacts
 data/bot.pid
+data/supervisor.pid
 data/rr_state.json
 data/media_cache.json
 logs/*.err
