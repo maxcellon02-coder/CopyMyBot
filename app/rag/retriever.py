@@ -71,13 +71,19 @@ async def retrieve(
     vector = await embed_query(query)
 
     if _is_price_query(query):
-        # First try: pricelist documents only
+        # 1) Каталог «Master Data Base» — основной источник со структурными ценами
+        results = await get_store().search(
+            vector, top_k=top_k, filter_by={"doc_type": "catalog"}
+        )
+        if results:
+            return _fmt_results(results)
+        # 2) Прайс-листы (DOCX/XLSX из канала)
         results = await get_store().search(
             vector, top_k=top_k, filter_by={"doc_type": "pricelist"}
         )
         if results:
             return _fmt_results(results)
-        # Fallback: unrestricted search (for cases where doc_type not yet indexed)
+        # 3) Fallback: неограниченный поиск
 
     filters = {"source_type": source_type} if source_type else None
     results = await get_store().search(vector, top_k=top_k, filter_by=filters)
