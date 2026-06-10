@@ -341,11 +341,31 @@ async def _handle_name_input(client: Client, message: Message, user) -> None:
 # ── Обработчик новых участников группы ───────────────────────────────────────
 
 async def on_new_member(client: Client, message: Message) -> None:
-    # ВАЖНО: бот НЕ пишет первым — ни в группу, ни в личку при вступлении.
-    # Инициативная личка незнакомому пользователю = риск СПАМа (Telegram банит).
-    # Отвечаем и выясняем потребность ТОЛЬКО когда человек напишет сам
-    # (см. on_message: незнакомцу даём приветствие в ответ на его первое сообщение).
-    return
+    # При вступлении — ТОЛЬКО короткое приветствие В ГРУППЕ. Бот НЕ пишет в
+    # личку первым (риск СПАМа). Диалог и выяснение потребностей начинаем лишь
+    # когда человек сам что-то спросит (см. on_message).
+    # Известного клиента из базы приветствуем по имени; незнакомца — без имени.
+    if not message.new_chat_members:
+        return
+    bot_id = await _get_bot_id(client)
+    for user in message.new_chat_members:
+        if user.is_bot or user.id == bot_id:
+            continue
+        known = _user_names.get(user.id) or (user.first_name if user.id in _contacts else None)
+        try:
+            if known:
+                await message.reply(
+                    f"Assalomu alaykum, {known}! 👋 Yana ko'rishganimizdan xursandmiz 🙂\n"
+                    f"Здравствуйте, {known}! Рады снова видеть вас 🙂"
+                )
+            else:
+                await message.reply(
+                    "Assalomu alaykum! 👋 Maxcellon guruhiga xush kelibsiz!\n"
+                    "Здравствуйте! 👋 Добро пожаловать в группу Maxcellon!"
+                )
+            logger.info(f"[ONBOARD] Group welcome (no DM) user={user.id} known={bool(known)}")
+        except Exception as e:
+            logger.warning(f"[ONBOARD] Group welcome failed user={user.id}: {e}")
 
 
 # ── Индикатор «печатает…» ─────────────────────────────────────────────────────
