@@ -514,9 +514,15 @@ async def _process_message(client: Client, message: Message, handler_start: floa
 
         # ── Запрос имени: только если неизвестен ─────────────────────────────
         if user.id not in _user_names and user.id not in _awaiting_name:
-            fn = user.first_name or ""
-            greeting = f"Assalomu alaykum{', ' + fn if fn else ''}! 👋 Guruhimizga xush kelibsiz!\n" \
-                       f"Sizga qanday murojaat qilsam bo'ladi? Ismingizni yozing 😊"
+            # Имя из Telegram НЕ используем (не «зовём по имени, а потом просим имя»).
+            # Отвечаем на языке клиента (узбекский латиница / русский кириллица).
+            lang = _detect_lang(message.text or message.caption or "")
+            if lang == "ru":
+                greeting = "Здравствуйте! 👋 Добро пожаловать!\n" \
+                           "Как я могу к вам обращаться? Напишите, пожалуйста, ваше имя 😊"
+            else:
+                greeting = "Assalomu alaykum! 👋 Xush kelibsiz!\n" \
+                           "Sizga qanday murojaat qilsam bo'ladi? Ismingizni yozing 😊"
             _awaiting_name.add(user.id)
             try:
                 await message.reply(greeting)
