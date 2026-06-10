@@ -1,14 +1,16 @@
-# install_autostart.ps1 — регистрирует автозапуск супервизора при входе в систему.
+# install_autostart.ps1 -- register the supervisor to auto-start at user logon.
 #
-# Запуск (один раз):
+# Run once:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File "E:\Claude code\mybot\scripts\install_autostart.ps1"
 #
-# Создаёт задачу планировщика «MaxcellonBotSupervisor», которая при логоне
-# текущего пользователя запускает bot_supervisor.ps1 (скрыто). Супервизор сам
-# держит бота живым. Перезапуск задачи каждую минуту, если упадёт сам супервизор.
+# Creates Scheduled Task "MaxcellonBotSupervisor": at logon it launches
+# bot_supervisor.ps1 (hidden), which keeps the bot alive. The task itself is
+# restarted every minute if the supervisor process ever dies.
 #
-# Удалить автозапуск:
+# Remove autostart:
 #   Unregister-ScheduledTask -TaskName "MaxcellonBotSupervisor" -Confirm:$false
+#
+# ASCII-only (parsed by Windows PowerShell 5.1).
 
 $ErrorActionPreference = "Stop"
 
@@ -28,5 +30,5 @@ $settings = New-ScheduledTaskSettingsSet `
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
     -Settings $settings -Description "Maxcellon Telegram bot supervisor (auto-restart)" -Force | Out-Null
 
-Write-Host "OK: задача '$TaskName' зарегистрирована (запуск при входе в систему)."
-Write-Host "Запустить прямо сейчас: Start-ScheduledTask -TaskName '$TaskName'"
+Write-Host "OK: task '$TaskName' registered (starts at logon)."
+Write-Host "Start now: Start-ScheduledTask -TaskName '$TaskName'"
