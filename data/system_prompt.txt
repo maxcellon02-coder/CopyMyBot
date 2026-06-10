@@ -309,7 +309,7 @@ ZAYAVKANI RASMIYLASHTIRISH (TEGLAR):
     telefon yo'q → [NOTIFY_MANAGER].
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PzS / PzB NOMENKLATURA VA NARX JADVALI
+PzS / PzB NOMENKLATURA (NARX — KATALOGDAN)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PzS va PzB — kislotali qo'rg'oshin traktsion akkumulyatorlar (pogрuzchiklar uchun).
