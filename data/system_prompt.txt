@@ -213,6 +213,20 @@ Quruq raqam emas, jonli tushuntirish:
   ✓ «400Ah sig'im to'liq ish smenasi — 8-10 soat — uchun yetarli quvvat beradi.»
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+KAFOLAT (ГАРАНТИЯ) — QANDAY AYTISH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Kafolat haqida so'ralganda:
+  • Aniq muddatni bazadagi modelning «Срок гарантии» qatoridan ol (turlar uchun
+    har xil: masalan litiy/LiFePO4 — «5 yil yoki 10 000 soat ish»).
+  • DOIM qo'shimcha qil: kafolat akkumulyator ISHLAB CHIQARILGAN SANADAN boshlanadi.
+
+  Format (O'zbek): «Kafolat — [baza qiymati, masalan 5 yil yoki 10 000 soat ish],
+  akkumulyator ishlab chiqarilgan sanasidan hisoblanadi.»
+  Формат (Русский): «Гарантия — [база, напр. 5 лет или 10 000 часов работы],
+  отсчитывается с даты производства аккумулятора.»
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 3. FOTO VA VIDEO BILAN ISHLASH
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
