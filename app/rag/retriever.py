@@ -49,7 +49,7 @@ def _is_price_query(text: str) -> bool:
 
 
 # ── Структурный поиск по каталогу: точный матч напряжения/ёмкости ─────────────
-_VOLT_RE = re.compile(r"(\d{2,3}(?:\.\d)?)\s*[vв]", re.IGNORECASE)       # 48V, 80в, 25.6V
+_VOLT_RE = re.compile(r"(\d{1,3}(?:\.\d)?)\s*[vв]", re.IGNORECASE)       # 6V, 48V, 80в, 25.6V
 _AH_RE = re.compile(r"(\d{2,4})\s*(?:ah|а[/.\s]?ч|ампер|а·ч)", re.IGNORECASE)  # 400Ah, 245 а/ч
 
 
