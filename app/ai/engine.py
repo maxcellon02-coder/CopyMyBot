@@ -259,9 +259,16 @@ async def generate_reply(
         pass
 
     # ── RAG retrieval ─────────────────────────────────────────────────────────
+    # Запрос строим из последних реплик клиента + текущей, чтобы уточняющие
+    # вопросы («kafolat necha yil?», «rasm ber», «narxi?») находили тот же товар,
+    # о котором шла речь раньше (вольтаж/ёмкость/тип/модель из контекста).
+    recent_user = " ".join(
+        t["content"] for t in _history.get(conv_id, [])[-6:] if t["role"] == "user"
+    )
+    retrieval_query = f"{recent_user} {user_text}".strip()[-500:]
     rag_context = ""
     try:
-        rag_context = await retrieve(user_text, top_k=4)
+        rag_context = await retrieve(retrieval_query, top_k=4)
     except Exception as e:
         logger.warning(f"[RAG] Skipped for conv={conv_id}: {e}")
 
