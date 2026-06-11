@@ -36,8 +36,10 @@ _MODEL_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Вольтаж/ёмкость из подписи: (48V400Ah), 48V-400, 25.6V200Ah
-_VAH_RE = re.compile(r"(\d{2,3})\s*V[\s\-(]*?(\d{2,4})\s*Ah", re.IGNORECASE)
+# Вольтаж/ёмкость из подписи: (48V400Ah), 48V-400, 25.6V200Ah, 6V210Ah
+_VAH_RE = re.compile(r"(\d{1,3})\s*V[\s\-(]*?(\d{2,4})\s*Ah", re.IGNORECASE)
+# Вольтаж/ёмкость прямо из кода модели: LDC6-210 → 6V/210Ah, FT48-400 → 48V/400Ah
+_MODEL_VA_RE = re.compile(r"(?:LDC|FT)(\d{1,3})-(\d{2,4})", re.IGNORECASE)
 
 # Папки, которые НЕ отправляем клиенту (внутренние/брендовые)
 _EXCLUDE_FOLDER = ("логотип", "brandbook", "лого", "партнер", "к партнерам", "_debug")
