@@ -215,6 +215,7 @@ async def _send_card(
     user_questions: list,
     user_tg: Optional[str],
     chat_title: str,
+    edit_message_id: Optional[int] = None,
 ) -> None:
     target = settings.manager_group_id or settings.notification_chat_id
     if not target:
