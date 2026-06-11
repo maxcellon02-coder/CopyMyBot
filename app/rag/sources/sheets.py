@@ -100,6 +100,13 @@ def _product_text(row: dict) -> str:
         vah.append(f"Ёмкость: {ah}Ah")
     if vah:
         lines.append(" | ".join(vah))
+    # Сборка из артикула: N штук базовой модели последовательно = нужный вольтаж
+    qty = _article_qty(article)
+    if qty and qty != "1" and model:
+        lines.append(
+            f"Сборка: {qty} шт. модели {model} последовательно = {volt}V "
+            f"(цена указана за комплект из {qty} шт.)"
+        )
     if apps:
         lines.append(f"Применение: {apps}")
     if tech:
