@@ -60,7 +60,8 @@
       "Bash(powershell -c \"'alive: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
       "Bash(git commit -m 'fix\\(crm+rag\\): dedup leads by user \\(edit card\\); media send fixes; series-combination *)",
       "Bash(powershell -c \"'bot '+\\(Get-Content data/bot.pid\\)+': '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
-      "Bash(git commit -m 'fix\\(rag\\): build retrieval query from recent conversation context *)"
+      "Bash(git commit -m 'fix\\(rag\\): build retrieval query from recent conversation context *)",
+      "Bash(git commit -m 'feat\\(rag\\): index local knowledge docs \\(warranty terms AGM/GEL + LiFePO4\\); warranty-aware retrieval *)"
     ]
   },
   "hooks": {
