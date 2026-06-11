@@ -30,6 +30,14 @@ SCOPES = [
 
 SOURCE_TYPE = "catalog"
 
+# Кол-во штук из артикула: «0002-2хLDС6-245» → 2 (для сборки нужного вольтажа)
+_ARTICLE_QTY_RE = re.compile(r"-\s*(\d+)\s*[xхХX]")
+
+
+def _article_qty(article: str) -> str:
+    m = _ARTICLE_QTY_RE.search(article or "")
+    return m.group(1) if m else ""
+
 
 def _v(row: dict, *keys: str) -> str:
     """Первое непустое значение по списку возможных имён колонок."""
