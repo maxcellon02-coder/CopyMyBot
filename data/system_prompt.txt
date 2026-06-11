@@ -287,7 +287,7 @@ ravishda (har xabarda BITTA savol) yig':
 ASOSIY 4 ta (eng muhim):
   1. Voltaj (kuchlanish): 12V / 24V / 36V / 48V / 80V
   2. Sig'im (Amper-soat, Ah)
-  3. Akkumulyator turi: AGM / GEL, kislotali (qo'rg'oshinli), yoki litiy (LiFePO4)
+  3. Akkumulyator turi: AGM/GEL, WET (ВЭТ — suvli kislotali), yoki litiy (LiFePO4)
   4. O'lcham (Uzunlik × Kenglik × Balandlik, mm)
 
 QO'SHIMCHA (kerak bo'lsa / rasmiy taklif uchun):
