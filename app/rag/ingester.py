@@ -20,7 +20,7 @@ async def run_full_ingestion(tg_client=None) -> dict:
     store = QdrantStore()
     await store.ensure_collection()
 
-    stats: dict = {"telegram": 0, "gdrive": 0, "catalog": 0, "errors": []}
+    stats: dict = {"telegram": 0, "gdrive": 0, "catalog": 0, "knowledge": 0, "errors": []}
 
     # Каталог «Master Data Base» (Google Sheet) — основной источник знаний
     if settings.catalog_sheet_id:
@@ -31,6 +31,15 @@ async def run_full_ingestion(tg_client=None) -> dict:
         except Exception as e:
             logger.error(f"Catalog ingestion error: {e}")
             stats["errors"].append(f"catalog: {e}")
+
+    # Локальные документы знаний (data/knowledge/*.md|txt): гарантия, инструкции
+    from app.rag.sources.local_docs import LocalDocsIngester
+    try:
+        n = await LocalDocsIngester(store).ingest_all()
+        stats["knowledge"] = n
+    except Exception as e:
+        logger.error(f"Knowledge docs ingestion error: {e}")
+        stats["errors"].append(f"knowledge: {e}")
 
     # Telegram channels + groups
     if tg_client and settings.monitored_channels:
