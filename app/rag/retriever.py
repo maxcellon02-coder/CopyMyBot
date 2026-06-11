@@ -118,28 +118,38 @@ async def retrieve(
     """
     vector = await embed_query(query)
 
+    # Гарантийные вопросы → приоритетно подмешиваем документы условий гарантии
+    # (data/knowledge/warranty_*). Срок/длительность берётся из каталога ниже.
+    warranty_ctx = ""
+    if _is_warranty_query(query):
+        wres = await get_store().search(
+            vector, top_k=2, filter_by={"doc_type": "warranty"}
+        )
+        if wres:
+            warranty_ctx = _fmt_results(wres)
+
+    main_ctx = ""
     # 0) Точный матч каталога по напряжению/ёмкости (если есть в запросе)
     structured = await _catalog_by_specs(vector, query, top_k)
     if structured:
-        return _fmt_results(structured)
-
-    if _is_price_query(query):
-        # 1) Каталог «Master Data Base» — основной источник со структурными ценами
+        main_ctx = _fmt_results(structured)
+    elif _is_price_query(query):
+        # Каталог → прайс-листы → неограниченный поиск
         results = await get_store().search(
             vector, top_k=top_k, filter_by={"doc_type": "catalog"}
         )
-        if results:
-            return _fmt_results(results)
-        # 2) Прайс-листы (DOCX/XLSX из канала)
-        results = await get_store().search(
-            vector, top_k=top_k, filter_by={"doc_type": "pricelist"}
-        )
-        if results:
-            return _fmt_results(results)
-        # 3) Fallback: неограниченный поиск
+        if not results:
+            results = await get_store().search(
+                vector, top_k=top_k, filter_by={"doc_type": "pricelist"}
+            )
+        if not results:
+            filters = {"source_type": source_type} if source_type else None
+            results = await get_store().search(vector, top_k=top_k, filter_by=filters)
+        main_ctx = _fmt_results(results) if results else ""
+    else:
+        filters = {"source_type": source_type} if source_type else None
+        results = await get_store().search(vector, top_k=top_k, filter_by=filters)
+        main_ctx = _fmt_results(results) if results else ""
 
-    filters = {"source_type": source_type} if source_type else None
-    results = await get_store().search(vector, top_k=top_k, filter_by=filters)
-    if not results:
-        return ""
-    return _fmt_results(results)
+    parts = [c for c in (warranty_ctx, main_ctx) if c]
+    return "\n\n---\n\n".join(parts)
