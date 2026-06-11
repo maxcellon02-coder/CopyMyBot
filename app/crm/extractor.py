@@ -133,15 +133,49 @@ async def maybe_extract_lead(
         return
 
     level = data.get("intent_level", "browsing")
+    name_val = user_name or data.get("name")
+    phone_val = phone or data.get("phone")
+    notes_val = f"[{level}] {data.get('notes') or ''}".strip("[] ")
+
+    # ── Дедупликация по пользователю ──────────────────────────────────────────
+    # Один и тот же человек (external_user_id) шлёт несколько сообщений →
+    # обновляем УЖЕ отправленную незанятую карточку, а не плодим новые лиды.
+    existing = await tracker.get_recent_open_lead_by_user(external_user_id)
+    if existing:
+        lead_id = existing["id"]
+        await tracker.update_lead(
+            lead_id,
+            user_name=name_val,
+            phone=phone_val,
+            product_interest=data.get("product_interest"),
+            location=data.get("location"),
+            notes=notes_val,
+        )
+        logger.info(
+            f"[CRM] Lead #{lead_id} обновлён (дедуп user={external_user_id} "
+            f"conv={conv_id}) intent={level}"
+        )
+        if tg_client and existing.get("manager_message_id"):
+            await _send_card(
+                tg_client=tg_client, lead_id=lead_id, conv_id=conv_id,
+                user_name=name_val, phone=phone_val, data=data,
+                photos=[],  # при обновлении фото повторно не пересылаем
+                chat_id=chat_id, message_id=message_id, user_id=user_id,
+                user_questions=user_questions or [], user_tg=user_tg,
+                chat_title=chat_title or "Личка",
+                edit_message_id=existing["manager_message_id"],
+            )
+        return
+
     lead_id = await tracker.save_lead(
         conv_id=conv_id,
         platform=platform,
         external_user_id=external_user_id,
-        user_name=user_name or data.get("name"),
-        phone=phone or data.get("phone"),
+        user_name=name_val,
+        phone=phone_val,
         product_interest=data.get("product_interest"),
         location=data.get("location"),
-        notes=f"[{level}] {data.get('notes') or ''}".strip("[] "),
+        notes=notes_val,
     )
     logger.info(
         f"[CRM] Lead #{lead_id} | conv={conv_id} | "
@@ -153,8 +187,8 @@ async def maybe_extract_lead(
             tg_client=tg_client,
             lead_id=lead_id,
             conv_id=conv_id,
-            user_name=user_name or data.get("name"),
-            phone=phone or data.get("phone"),
+            user_name=name_val,
+            phone=phone_val,
             data=data,
             photos=photos or [],
             chat_id=chat_id,
