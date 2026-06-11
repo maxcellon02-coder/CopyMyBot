@@ -266,6 +266,18 @@ async def _send_card(
         f"↩️ Ответьте на это сообщение чтобы взять лид <b>#{lead_id}</b>"
     )
 
+    # Режим обновления: редактируем уже отправленную карточку (дедуп)
+    if edit_message_id:
+        try:
+            await tg_client.edit_message_text(
+                target, edit_message_id, card, parse_mode=enums.ParseMode.HTML
+            )
+            logger.info(f"[CRM] Card updated | lead={lead_id} msg={edit_message_id}")
+            return
+        except Exception as e:
+            # Не удалось отредактировать (сообщение удалили и т.п.) — шлём новую
+            logger.warning(f"[CRM] Edit failed ({e}) — отправляю новую карточку")
+
     try:
         sent = await tg_client.send_message(target, card, parse_mode=enums.ParseMode.HTML)
         _lead_by_msg_id[sent.id] = lead_id
