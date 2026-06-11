@@ -8,7 +8,7 @@ Usage pattern:
     await tracker.save_lead(conv_id, platform="telegram", ...)
     await tracker.close_conversation(conv_id)
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import func, select, update
