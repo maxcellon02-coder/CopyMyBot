@@ -185,6 +185,7 @@ class SheetCatalogIngester:
                     "battery_type": _v(row, "Тип_АКБ"),
                     "voltage": _v(row, "Напряжение_V"),
                     "ah": _v(row, "Емкость_Ah"),
+                    "set_qty": _article_qty(article),
                     "price_retail": _v(row, "Цена_Розница"),
                     "price_wholesale": _v(row, "Цена_Опт"),
                     "currency": _v(row, "Валюта") or "UZS",
