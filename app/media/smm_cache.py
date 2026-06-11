@@ -124,9 +124,16 @@ def build_cache(
         cat = _category(folder, kind)
 
         codes = _extract_models(caption, folder)
-        # Вольтаж/ёмкость (для поиска по «48v 400»)
+        # Вольтаж/ёмкость (для поиска по «6v 210», «48v 400»)
         vah = _VAH_RE.search(caption) or _VAH_RE.search(folder)
         volt, ah = (vah.group(1), vah.group(2)) if vah else (None, None)
+        # Если в тексте нет — извлекаем из кода модели (LDC6-210 → 6V/210Ah)
+        if not volt and codes:
+            for c in codes:
+                mv = _MODEL_VA_RE.match(c)
+                if mv:
+                    volt, ah = mv.group(1), mv.group(2)
+                    break
 
         entry = {
             "path": path,
