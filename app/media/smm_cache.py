@@ -45,9 +45,20 @@ _MODEL_VA_RE = re.compile(r"(?:LDC|FT)(\d{1,3})-(\d{2,4})", re.IGNORECASE)
 _EXCLUDE_FOLDER = ("логотип", "brandbook", "лого", "партнер", "к партнерам", "_debug")
 
 
+# Кириллические буквы-двойники → латиница (каталог пишет «LDС6-245» с кир. «С»)
+_CYR2LAT = str.maketrans({
+    "А": "A", "В": "B", "Е": "E", "К": "K", "М": "M", "Н": "H", "О": "O",
+    "Р": "P", "С": "C", "Т": "T", "У": "Y", "Х": "X", "І": "I",
+})
+
+
+def _translit(s: str) -> str:
+    return s.translate(_CYR2LAT)
+
+
 def _norm_model(s: str) -> str:
-    """FT48-400 / ft48 400 / FT48–400 → FT48-400 (верхний регистр, дефис)."""
-    s = s.strip().upper().replace("–", "-").replace("—", "-")
+    """FT48-400 / ft48 400 / FT48–400 / LDС6-245(кир.) → нормальный латинский код."""
+    s = _translit(s.strip().upper().replace("–", "-").replace("—", "-"))
     s = re.sub(r"\s+", "", s)
     return s
 
@@ -57,7 +68,7 @@ def _extract_models(*texts: str) -> list[str]:
     for t in texts:
         if not t:
             continue
-        for m in _MODEL_RE.findall(t):
+        for m in _MODEL_RE.findall(_translit(t)):
             code = _norm_model(m if isinstance(m, str) else m[0])
             if code not in found:
                 found.append(code)
