@@ -48,6 +48,17 @@ def _is_price_query(text: str) -> bool:
     return any(kw in lower for kw in _PRICE_KEYWORDS)
 
 
+_WARRANTY_KEYWORDS = (
+    "kafolat", "kafolatlanadi", "garant", "гаранти", "гарантия", "гарантий",
+    "warranty", "kafolat muddati", "kafolat shartlari", "условия гарантии",
+)
+
+
+def _is_warranty_query(text: str) -> bool:
+    lower = text.lower()
+    return any(kw in lower for kw in _WARRANTY_KEYWORDS)
+
+
 # ── Структурный поиск по каталогу: точный матч напряжения/ёмкости ─────────────
 _VOLT_RE = re.compile(r"(\d{1,3}(?:\.\d)?)\s*[vв]", re.IGNORECASE)       # 6V, 48V, 80в, 25.6V
 _AH_RE = re.compile(r"(\d{2,4})\s*(?:ah|а[/.\s]?ч|ампер|а·ч)", re.IGNORECASE)  # 400Ah, 245 а/ч
