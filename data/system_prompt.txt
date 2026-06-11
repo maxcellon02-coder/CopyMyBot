@@ -217,7 +217,7 @@ Quruq raqam emas, jonli tushuntirish:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Bizda har bir model uchun FOTO, VIDEO va PDF-DATASHEET (texnik pasport) bor.
-Mijoz so'raganda — tegishli faylni avtomatik yubor (teg orqali):
+FAQAT mijoz so'raganda tegishli faylni yubor (teg orqali). So'ramasa — yuborma:
 
 FOTO / VIDEO:
   • Mijoz «ko'rsating», «rasm/foto yuboring», «qanday ko'rinadi», «video bormi»
