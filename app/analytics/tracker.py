@@ -141,6 +141,42 @@ async def assign_lead(lead_id: int, manager_name: str) -> None:
         )
 
 
+async def get_recent_open_lead_by_user(
+    external_user_id: str, within_hours: int = 24
+) -> Optional[dict]:
+    """Самая свежая карточка лида этого пользователя, которую УЖЕ отправили
+    менеджеру, но её ещё НЕ взяли (assigned_to пуст), в пределах окна времени.
+
+    Нужно для дедупликации: один и тот же человек (по external_user_id) →
+    редактируем существующую карточку, а не создаём новую.
+    Возвращает {"id", "manager_message_id"} или None.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=within_hours)
+    async with get_session() as s:
+        row = await s.execute(
+            select(Lead.id, Lead.manager_message_id)
+            .where(
+                Lead.external_user_id == external_user_id,
+                Lead.assigned_to.is_(None),
+                Lead.manager_message_id.isnot(None),
+                Lead.sent_at >= cutoff,
+            )
+            .order_by(Lead.id.desc())
+            .limit(1)
+        )
+        r = row.first()
+        return {"id": r[0], "manager_message_id": r[1]} if r else None
+
+
+async def update_lead(lead_id: int, **fields) -> None:
+    """Обновляет непустые поля существующего лида (для дедуп-редактирования)."""
+    values = {k: v for k, v in fields.items() if v is not None}
+    if not values:
+        return
+    async with get_session() as s:
+        await s.execute(update(Lead).where(Lead.id == lead_id).values(**values))
+
+
 async def get_lead_by_manager_msg(manager_message_id: int) -> Optional[int]:
     """Return lead_id for the given manager group message_id, or None."""
     async with get_session() as s:
