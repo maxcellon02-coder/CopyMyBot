@@ -58,7 +58,9 @@
       "Bash(git commit -m 'chore: update local permissions *)",
       "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c \"import app.crm.extractor, app.analytics.tracker; print\\('extractor + tracker import OK'\\)\")",
       "Bash(powershell -c \"'alive: '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
-      "Bash(git commit -m 'fix\\(crm+rag\\): dedup leads by user \\(edit card\\); media send fixes; series-combination *)"
+      "Bash(git commit -m 'fix\\(crm+rag\\): dedup leads by user \\(edit card\\); media send fixes; series-combination *)",
+      "Bash(powershell -c \"'bot '+\\(Get-Content data/bot.pid\\)+': '+[bool]\\(Get-Process -Id \\(Get-Content data/bot.pid\\) -EA SilentlyContinue\\)\")",
+      "Bash(git commit -m 'fix\\(rag\\): build retrieval query from recent conversation context *)"
     ]
   },
   "hooks": {
