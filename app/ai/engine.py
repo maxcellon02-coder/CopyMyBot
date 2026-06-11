@@ -265,7 +265,9 @@ async def generate_reply(
     recent_user = " ".join(
         t["content"] for t in _history.get(conv_id, [])[-6:] if t["role"] == "user"
     )
-    retrieval_query = f"{recent_user} {user_text}".strip()[-500:]
+    # ТЕКУЩЕЕ сообщение — первым: парсер V/Ah берёт первое совпадение, поэтому
+    # «48V 500Ah» из текущего запроса должен иметь приоритет над 460Ah из истории.
+    retrieval_query = f"{user_text} {recent_user}".strip()[:500]
     rag_context = ""
     try:
         rag_context = await retrieve(retrieval_query, top_k=4)
