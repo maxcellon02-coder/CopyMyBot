@@ -67,13 +67,15 @@ async def _catalog_by_specs(vector: list, query: str, top_k: int) -> Optional[li
     volt, ah = _parse_specs(query)
     if not (volt or ah):
         return None
+    # Напряжение критично (нельзя предлагать другой вольтаж), ёмкость гибкая (±):
+    # сначала точный V+Ah, потом тот же V (ближайший Ah), и лишь затем только Ah.
     attempts: List[dict] = []
     if volt and ah:
         attempts.append({"voltage": volt, "ah": ah})
-    if ah:
-        attempts.append({"ah": ah})
     if volt:
         attempts.append({"voltage": volt})
+    if ah:
+        attempts.append({"ah": ah})
     for extra in attempts:
         flt = {"doc_type": "catalog", **extra}
         results = await get_store().search(vector, top_k=top_k, filter_by=flt)
