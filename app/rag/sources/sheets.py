@@ -10,6 +10,7 @@ app/rag/sources/sheets.py — индексация каталога «Master Dat
 (config/service_account.json), таблица расшарена на этот аккаунт.
 """
 import asyncio
+import re
 from pathlib import Path
 from typing import List
 
